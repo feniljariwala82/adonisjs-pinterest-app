@@ -1,0 +1,40 @@
+@import 'constants';
+
+// button
+$btn-padding-y: $input-btn-padding-y;
+$btn-padding-x: $input-btn-padding-x;
+$btn-font-weight: $font-weight-bold;
+$btn-border-radius: $border-radius;
+$input-btn-border-width: 0.5px;
+
+// list group
+$list-group-border-radius: $border-radius;
+
+// navbar toggler
+$navbar-toggler-border-radius: 0.5rem;
+$navbar-toggler-focus-width: 0.1rem;
+
+$btn-focus-width: $input-btn-focus-width;
+
+$font-family-sans-serif: IBM Plex Sans, sans-serif,
+  // Cross-platform generic font family (default user interface font)
+  system-ui,
+  // Safari for macOS and iOS (San Francisco)
+  -apple-system,
+  // Windows
+  'Segoe UI',
+  // Android
+  Roboto,
+  // Basic web fallback
+  'Helvetica Neue',
+  Arial,
+  // Linux
+  'Noto Sans',
+  'Liberation Sans',
+  // Sans serif fallback
+  sans-serif,
+  // Emoji fonts
+  'Apple Color Emoji',
+  'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji' !default;
+
+@import '../../node_modules/bootstrap/scss/bootstrap.scss';

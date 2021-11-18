@@ -1,0 +1,100 @@
+@layout('layouts/main')
+@set('title','Signup')
+
+@section('content')
+
+<div class="container mb-5 mt-5">
+  <form action="{{ route('auth.signup') }}" method="POST">
+    {{ csrfField() }}
+
+    <h4 class="mb-4 fs-4 fw-bold text-center">Sign Up</h4>
+
+    {{--  column flex  --}}
+    <div class="d-flex flex-column align-items-center">
+
+      {{--  first name  --}}
+      <div class="col-12 col-md-5">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="firstName" name="firstName" placeholder="John"
+            value="{{ flashMessages.get('firstName', '') }}" required>
+          <label for="floatingInput">First Name</label>
+          <p class="fs-6 text-danger mb-0" id="firstNameError" style="display:none;">
+            {{ flashMessages.get('errors.firstName') }}
+          </p>
+        </div>
+      </div>
+      {{--  fname error  --}}
+      @if(flashMessages.has('errors.firstName'))
+      <script type="module">
+        $('#firstName').addClass('is-invalid')
+        $('#firstNameError').css({'display':'inline-block'})
+      </script>
+      @endif
+
+      {{--  last name  --}}
+      <div class="col-12 col-md-5">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Dou"
+            value="{{ flashMessages.get('lastName', '') }}" required>
+          <label for="floatingInput">Last Name</label>
+          <p class="fs-6 text-danger mb-0" id="lastNameError" style="display:none;">
+            {{ flashMessages.get('errors.lastName') }}
+          </p>
+        </div>
+      </div>
+      {{--  last name error  --}}
+      @if(flashMessages.has('errors.lastName'))
+      <script type="module">
+        $('#lastName').addClass('is-invalid')
+        $('#lastNameError').css({'display':'inline-block'})
+      </script>
+      @endif
+
+      {{--  email  --}}
+      <div class="col-12 col-md-5">
+        <div class="form-floating mb-3">
+          <input type="email" class="form-control" id="emailInput" name="email" placeholder="name@example.com"
+            value="{{ flashMessages.get('email', '') }}" required>
+          <label for="floatingInput">Email address</label>
+          <p class="fs-6 text-danger mb-0" id="emailError" style="display:none;">
+            {{ flashMessages.get('errors.email') }}
+          </p>
+        </div>
+      </div>
+      {{--  email error  --}}
+      @if(flashMessages.has('errors.email'))
+      <script type="module">
+        $('#emailInput').addClass('is-invalid')
+        $('#emailError').css({'display':'inline-block'})
+      </script>
+      @endif
+
+      {{--  password  --}}
+      <div class="col-12 col-md-5">
+        <div class="form-floating mb-3">
+          <input type="password" class="form-control" id="passwordInput" name="password" placeholder="Password"
+            required>
+          <label for="floatingPassword">Password</label>
+          <p class="fs-6 text-danger mb-0" id="passwordError" style="display:none;">
+            {{ flashMessages.get('errors.password') }}
+          </p>
+        </div>
+      </div>
+      {{--  password error  --}}
+      @if(flashMessages.has('errors.password'))
+      <script type="module">
+        $('#passwordInput').addClass('is-invalid')
+        $('#passwordError').css({'display':'inline-block'})
+      </script>
+      @endif
+
+      {{--  buttons  --}}
+      <div class="col-12 col-md-5">
+        <button type="submit" class="btn btn-secondary">Signup</button>
+        <a class="btn btn-primary" href="{{ route('auth.login') }}">Login</a>
+      </div>
+    </div>
+  </form>
+</div>
+
+@endsection
