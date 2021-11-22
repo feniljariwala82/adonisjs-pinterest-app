@@ -11,12 +11,14 @@ export default class CreatePostValidator {
       size: '2mb',
       extnames: ['jpg', 'png'],
     }),
-    tags: schema.array.optional([rules.minLength(1)]).members(schema.string()),
+    tags: schema.string({ trim: true }, [rules.required()]),
   })
 
   public messages = {
     'required': 'The {{ field }} is required',
     'title.maxLength': 'Title can not be longer than 50 characters',
     'description.maxLength': 'Description can not be longer than 400 characters',
+    'postImage.size': 'Image size should not be greater than 2mb',
+    'postImage.extnames': 'Image should be jpg or png only',
   }
 }

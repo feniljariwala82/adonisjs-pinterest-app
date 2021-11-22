@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column, BelongsTo, belongsTo } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, column, BelongsTo, belongsTo, hasMany, HasMany } from '@ioc:Adonis/Lucid/Orm'
 import User from 'App/Models/User'
+import PostTag from 'App/Models/PostTag'
 
 type PostType = {
   title: string
@@ -36,6 +37,12 @@ export default class Post extends BaseModel {
   })
   public user: BelongsTo<typeof User>
 
+  // post has many tags
+  @hasMany(() => PostTag, {
+    foreignKey: 'post_id', // defaults to userId
+  })
+  public postTags: HasMany<typeof PostTag>
+
   /**
    * @description method to find all the posts for particular user
    * @param userId user id
@@ -58,13 +65,13 @@ export default class Post extends BaseModel {
    */
   public static async store(post: PostType, imageName: string, userId: number) {
     try {
-      await this.create({
+      let result = await this.create({
         title: post.title.toLocaleLowerCase(),
         description: post.description.toLocaleLowerCase(),
         user_id: userId,
         image_name: imageName,
       })
-      return Promise.resolve('New task created')
+      return Promise.resolve(result)
     } catch (error) {
       console.error(error)
       return Promise.reject(error.message)

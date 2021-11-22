@@ -3,7 +3,10 @@
 
 @section('content')
 <div class="container mb-5 mt-5">
-  <form action="{{ route('post.store') }}" method="POST">
+
+  {{--  <img src="" id="preview" class="img-thumbnail" alt="Preview image">  --}}
+
+  <form action="{{ route('post.store') }}" method="POST" id="myForm" enctype="multipart/form-data">
     {{ csrfField() }}
     <div class="d-flex flex-column align-items-center">
       <div class="col align-items-start">
@@ -53,9 +56,9 @@
         <div class="form-floating mb-3">
           <div class="input-group mb-3">
             <label class="input-group-text" for="inputGroupFile01">Upload</label>
-            <input type="file" class="form-control" id="inputGroupFile01">
+            <input type="file" class="form-control" name="postImage" value="{{ flashMessages.get('postImage', '') }}">
           </div>
-          <p class="fs-6 text-danger mb-0" id="postImageError" style="display:none;">
+          <p class="fs-6 text-danger mb-0 text-capitalize" id="postImageError" style="display:none;">
             {{ flashMessages.get('errors.postImage') }}
           </p>
         </div>
@@ -73,19 +76,23 @@
           {{--  tags  --}}
           <div class="col-12 col-sm-10">
             <div class="form-floating">
-              <input type="text" class="form-control" id="tagInput" name="tag" placeholder="create song"
-                value="{{ flashMessages.get('tag', '') }}" required>
+              {{--  input  --}}
+              <input type="text" class="form-control" id="tagInput" placeholder="create tag">
+
+              {{--  hidden form field  --}}
+              <input type="text" class="form-control" id="tags" name="tags" placeholder="create tag" hidden>
+
               <label for="floatingInput">Post tag</label>
               <p class="fs-6 text-danger mb-0" id="tagError" style="display:none;">
-                {{ flashMessages.get('errors.tag') }}
+                {{ flashMessages.get('errors.tags') }}
               </p>
             </div>
           </div>
-          {{--  postImage error  --}}
-          @if(flashMessages.has('errors.postImage'))
+          {{--  tags error  --}}
+          @if(flashMessages.has('errors.tags'))
           <script type="module">
-            $('#postImageInput').addClass('is-invalid')
-            $('#postImageError').css({'display':'inline-block'})
+            $('#tagsInput').addClass('is-invalid')
+            $('#tagsError').css({'display':'inline-block'})
         </script>
           @endif
 
@@ -99,12 +106,7 @@
       {{--  tag view  --}}
       <div class="col-12 col-sm-8 col-md-5 mt-4">
         <div class="p-3 border rounded" id="tabContainer">
-          {{--  <div class="btn btn-secondary mt-1" id="btn">
-            <p style="display:contents;" class="text-capitalize" id="">tower</p>
-            <button type="button" class="btn-close ps-2 btn-close-white btn-sm" aria-label="Close" id="closeBtn"
-              style="display:inline-block;">
-            </button>
-          </div>  --}}
+
         </div>
       </div>
 
@@ -118,28 +120,86 @@
 
 
 <script type="module">
-  let index = 0
-  let tags = []
+  $(document).ready(function () {
+    let index = 0
+    let tags = []
+  
+    $('#closeBtn').on('click', function () {
+      $('#btn').addClass('fade')
+    })
+  
+    $('#addTab').on('click', function () {
+      let i = ++index
+      $('#tabContainer').append(`<span class="badge rounded-pill bg-secondary text-capitalize mt-1 ms-1 p-2" id=${i} style="cursor:pointer;"></span>`)
+  
+      // assigning value to the badge
+      $('#' + i).text($('#tagInput').val())
+  
+      // adding new tag into array
+      tags.push($('#tagInput').val())
+  
+      // close button
+      $('#' + i).on('click', function () {
+        // removing from the tabs array
+        var index = tags.indexOf($('#' + i).text())
+        if (index !== -1) {
+          tags.splice(index, 1)
+        }
+  
+        // fading tag
+        $('#' + i).remove()
+  
+        // add tags to input on delete update input value
+        $("input[name='tags']").val(tags)
+      })
+  
+      // add tags to input values
+      $("input[name='tags']").val(tags)
 
-  $('#closeBtn').on('click', function () {
-    $('#btn').addClass('fade')
-  })
+      // resetting input text null
+      $('#tagInput').val('')
+    })
 
-  $('#addTab').on('click', function () {
-    let i = ++index
-    $('#tabContainer')
-    .append(`<div class="btn btn-secondary mt-1 ms-1" id=${i}> </div>`)
+    // let file
+    // $('input[type="file"]').change(function(e) {
+    //   console.log('changed')
+    //   var fileName = e.target.files[0].name;
+    
+    //   var reader = new FileReader();
+    //   reader.onload = function(e) {
+    //     // get loaded data and render thumbnail.
+    //     $("#preview").attr('src', e.target.result);
+    //   };
+    //   // read the image file as a data URL.
+    //   file = this.files[0]
+    //   reader.readAsDataURL(this.files[0]);
+    // });
 
-    $('#' + index).append(`<p style="display:contents;" class="text-capitalize" id=p_${i}> ${$('#tagInput').val()} </p>`)
-    $('#p_' + i).val( $('#tagInput').val() )
-    $('#' + index).append(` <button type="button" class="btn-close ps-2 btn-close-white btn-sm" aria-label="Close"
-      id="closeBtn"> </button>`)
+    //  $("#myForm").submit(( event ) => {
+    //   event.preventDefault()
 
-    // add values into the array
-    tags.push($('#tagInput').val())
+    //   let formData = {
+    //     title: $('#titleInput').val(),
+    //     description: $('#descriptionInput').val(),
+    //     postImage: file,
+    //     tags: tags,
+    //     _csrf: $('input[name="_csrf"]').val()
+    //   }
 
-    // resetting input text null
-    $('#tagInput').val('')
+    //   console.log(formData)
+
+    //    $.ajax({
+    //      url: "{{ route('post.store') }}",
+    //      method: 'POST',
+    //      data: formData
+    //    })
+    //      .done(() => {
+    //        console.log('Done')
+    //      })
+    //      .fail((err) => {
+    //        console.log(err)
+    //      })
+    //  })
   })
 </script>
 @endsection

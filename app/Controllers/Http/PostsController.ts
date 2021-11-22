@@ -2,6 +2,7 @@ import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Post from 'App/Models/Post'
 import CreatePostValidator from 'App/Validators/CreatePostValidator'
 import Application from '@ioc:Adonis/Core/Application'
+import { cuid } from '@ioc:Adonis/Core/Helpers'
 
 export default class PostsController {
   /**
@@ -34,17 +35,25 @@ export default class PostsController {
    * @description to save new post
    */
   public async store({ request, session, response, auth }: HttpContextContract) {
+    console.log(request.all())
+
     // validate data
     let payload = await request.validate(CreatePostValidator)
+    let tags = payload.tags.split(',')
 
     // moving file to the uploads folder
-    await payload.postImage.move(Application.tmpPath('uploads'))
+    await payload.postImage.move(Application.tmpPath('uploads'), {
+      name: cuid() + payload.postImage.extname,
+    })
     let imgName = payload.postImage.fileName
 
     // creating a post
     try {
       let result = await Post.store(payload, imgName!, auth.user!.id)
-      session.flash({ success: result })
+
+      // creating tags
+
+      session.flash({ success: '' })
       return response.redirect().toRoute('task.index')
     } catch (error) {
       console.error(error)

@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, column, hasMany, HasMany } from '@ioc:Adonis/Lucid/Orm'
+import PostTag from 'App/Models/PostTag'
 
 export default class Tag extends BaseModel {
   @column({ isPrimary: true })
@@ -13,6 +14,12 @@ export default class Tag extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
+
+  // post has many tags
+  @hasMany(() => PostTag, {
+    foreignKey: 'tag_id',
+  })
+  public postTags: HasMany<typeof PostTag>
 
   /**
    * @description method to find posts according to tags
