@@ -6,7 +6,7 @@
   "author": "Fenil Jariwala <feniljariwala82@gmail.com> (https://feniljariwala.netlify.app)",
   "scripts": {
     "dev": "node ace serve --watch",
-    "build": "node ace build --production",
+    "build": "node ace build --production && cd ./build && yarn install --production",
     "start": "node server.js",
     "lint": "eslint . --ext=.ts",
     "format": "prettier --write ."
@@ -14,6 +14,7 @@
   "devDependencies": {
     "@adonisjs/assembler": "^5.0.0",
     "@symfony/webpack-encore": "^1.6.1",
+    "@types/masonry-layout": "^4.2.4",
     "adonis-preset-ts": "^2.1.0",
     "eslint": "7.32.0",
     "eslint-config-prettier": "^8.3.0",
@@ -42,7 +43,9 @@
     "bootstrap": "^5.1.3",
     "jquery": "^3.6.0",
     "luxon": "^2.1.1",
+    "masonry-layout": "^4.2.2",
     "mysql": "^2.18.1",
+    "phc-argon2": "^1.1.2",
     "proxy-addr": "^2.0.7",
     "reflect-metadata": "^0.1.13",
     "source-map-support": "^0.5.20"

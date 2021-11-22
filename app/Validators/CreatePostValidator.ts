@@ -7,10 +7,11 @@ export default class CreatePostValidator {
   public schema = schema.create({
     title: schema.string({ trim: true }, [rules.required(), rules.maxLength(50)]),
     description: schema.string({ trim: true }, [rules.required(), rules.maxLength(400)]),
-    post_image: schema.file({
+    postImage: schema.file({
       size: '2mb',
       extnames: ['jpg', 'png'],
     }),
+    tags: schema.array.optional([rules.minLength(1)]).members(schema.string()),
   })
 
   public messages = {

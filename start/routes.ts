@@ -10,7 +10,7 @@ Route.group(() => {
   .as('auth')
 
 // home page
-Route.get('/', 'HomeController.index').as('home')
+Route.get('/', 'HomeController.index').as('home').middleware(['silentAuth'])
 
 // posts routes
 Route.resource('/post', 'PostsController').middleware({ '*': ['auth'] })

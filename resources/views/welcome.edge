@@ -3,102 +3,66 @@
 
 @section('content')
 <div class="container">
-  <div class="row mt-4">
+  <div class="row mt-4" data-masonry='{"percentPosition": true }'>
 
-    {{--  visible only on phone  --}}
-    <div class="d-block d-sm-block">
-      @each(item in data)
-      {{--  <p>{{item.src}}</p> --}}
-      {{--  <img src="{{ asset('assets/images/{{item.src}}') }}" class="card-img-bottom card-img-top" alt="image1"> --}}
-      {{--  <div class="card-body">
-        <h5 class="card-title text-center">{{ item.title }}</h5>
-    </div> --}}
-    @else
-    <p class="fs-4 fw-bold text-center">No pins found</p>
-    @endeach
+    <div class="col-6 col-sm-6 col-md-3 col-lg-2">
+      {{--  post card  --}}
+      <img src="{{ asset('assets/images/1.jpg') }}" class="card-img-bottom card-img-top" alt="image1">
+      <div class="card-body">
+        <h5 class="card-title text-center fs-6">Card title</h5>
+      </div>
+    </div>
+
+    <div class="col-6 col-sm-6 col-md-3 col-lg-2">
+      <img src="{{ asset('assets/images/3.jpg') }}" class="card-img-bottom card-img-top" alt="image1">
+      <div class="card-body">
+        <h5 class="card-title text-center fs-6 ">Card title</h5>
+      </div>
+    </div>
+
+    <div class="col-6 col-sm-6 col-md-3 col-lg-2">
+      <img src="{{ asset('assets/images/2.jpg') }}" class="card-img-bottom card-img-top" alt="image1">
+      <div class="card-body">
+        <h5 class="card-title text-center fs-6 ">Card title</h5>
+      </div>
+    </div>
+
+    <div class="col-6 col-sm-6 col-md-3 col-lg-2">
+      <img src="{{ asset('assets/images/4.jpg') }}" class="card-img-bottom card-img-top" alt="image1">
+      <div class="card-body">
+        <h5 class="card-title text-center fs-6 ">Card title</h5>
+      </div>
+    </div>
+
+    <div class="col-6 col-sm-6 col-md-3 col-lg-2">
+      <img src="{{ asset('assets/images/1.jpg') }}" class="card-img-bottom card-img-top" alt="image1">
+      <div class="card-body">
+        <h5 class="card-title text-center fs-6 ">Card title</h5>
+      </div>
+    </div>
+
+    <div class="col-6 col-sm-6 col-md-3 col-lg-2">
+      <img src="{{ asset('assets/images/2.jpg') }}" class="card-img-bottom card-img-top" alt="image1">
+      <div class="card-body">
+        <h5 class="card-title text-center fs-6 ">Card title</h5>
+      </div>
+    </div>
+
+    <div class="col-6 col-sm-6 col-md-3 col-lg-2">
+      <img src="{{ asset('assets/images/3.jpg') }}" class="card-img-bottom card-img-top" alt="image1">
+      <div class="card-body">
+        <h5 class="card-title text-center fs-6 ">Card title</h5>
+      </div>
+    </div>
+
+    <div class="col-6 col-sm-6 col-md-3 col-lg-2">
+      <img src="{{ asset('assets/images/2.jpg') }}" class="card-img-bottom card-img-top" alt="image1">
+      <div class="card-body">
+        <h5 class="card-title text-center fs-6 ">Card title</h5>
+      </div>
+    </div>
+
   </div>
-
-  {{--  visible only on small  --}}
-  <div class="d-none d-sm-block d-md-none"></div>
-
-  {{--  visible only on medium  --}}
-  <div class="d-none d-md-block d-lg-none"></div>
-
-  {{--  visible only on large  --}}
-  <div class="d-none d-lg-block d-xl-none"></div>
-
-  {{--  visible only on xl  --}}
-  <div class="d-none d-xl-block d-xxl-none"></div>
-
-  <div class="col-12 col-sm-6 col-md-3">
-    {{--  post card  --}}
-    <img src="{{ asset('assets/images/1.jpg') }}" class="card-img-bottom card-img-top" alt="image1">
-    <div class="card-body">
-      <h5 class="card-title text-center">Card title</h5>
-    </div>
-
-    <img src="{{ asset('assets/images/2.jpg') }}" class="card-img-bottom card-img-top" alt="image1">
-    <div class="card-body">
-      <h5 class="card-title text-center">Card title</h5>
-    </div>
-
-    <img src="{{ asset('assets/images/3.jpg') }}" class="card-img-bottom card-img-top" alt="image1">
-    <div class="card-body">
-      <h5 class="card-title text-center">Card title</h5>
-    </div>
-  </div>
-
-  <div class="col-12 col-sm-6 col-md-3">
-    <img src="{{ asset('assets/images/4.jpg') }}" class="card-img-bottom card-img-top" alt="image1">
-    <div class="card-body">
-      <h5 class="card-title text-center">Card title</h5>
-    </div>
-
-    <img src="{{ asset('assets/images/1.jpg') }}" class="card-img-bottom card-img-top" alt="image1">
-    <div class="card-body">
-      <h5 class="card-title text-center">Card title</h5>
-    </div>
-
-    <img src="{{ asset('assets/images/3.jpg') }}" class="card-img-bottom card-img-top" alt="image1">
-    <div class="card-body">
-      <h5 class="card-title text-center">Card title</h5>
-    </div>
-  </div>
-
-  <div class="col-12 col-sm-6 col-md-3">
-    <img src="{{ asset('assets/images/2.jpg') }}" class="card-img-bottom card-img-top" alt="image1">
-    <div class="card-body">
-      <h5 class="card-title text-center">Card title</h5>
-    </div>
-
-    <img src="{{ asset('assets/images/1.jpg') }}" class="card-img-bottom card-img-top" alt="image1">
-    <div class="card-body">
-      <h5 class="card-title text-center">Card title</h5>
-    </div>
-
-    <img src="{{ asset('assets/images/3.jpg') }}" class="card-img-bottom card-img-top" alt="image1">
-    <div class="card-body">
-      <h5 class="card-title text-center">Card title</h5>
-    </div>
-  </div>
-
-  <div class="col-12 col-sm-6 col-md-3">
-    <img src="{{ asset('assets/images/4.jpg') }}" class="card-img-bottom card-img-top" alt="image1">
-    <div class="card-body">
-      <h5 class="card-title text-center">Card title</h5>
-    </div>
-
-    <img src="{{ asset('assets/images/3.jpg') }}" class="card-img-bottom card-img-top" alt="image1">
-    <div class="card-body">
-      <h5 class="card-title text-center">Card title</h5>
-    </div>
-
-    <img src="{{ asset('assets/images/4.jpg') }}" class="card-img-bottom card-img-top" alt="image1">
-    <div class="card-body">
-      <h5 class="card-title text-center">Card title</h5>
-    </div>
-  </div>
-
 </div>
-</div>
+
 @endsection

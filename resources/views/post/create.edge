@@ -1,1 +1,145 @@
+@layout('layouts/main')
+@set('title','Create Post')
 
+@section('content')
+<div class="container mb-5 mt-5">
+  <form action="{{ route('post.store') }}" method="POST">
+    {{ csrfField() }}
+    <div class="d-flex flex-column align-items-center">
+      <div class="col align-items-start">
+        <h4 class="mb-4 fs-4 fw-bold">Create Post</h4>
+      </div>
+
+      {{--  title  --}}
+      <div class="col-12 col-sm-8 col-md-5">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="titleInput" name="title" placeholder="create song"
+            value="{{ flashMessages.get('title', '') }}" required>
+          <label for="floatingInput">Post Title</label>
+          <p class="fs-6 text-danger mb-0" id="titleError" style="display:none;">
+            {{ flashMessages.get('errors.title') }}
+          </p>
+        </div>
+      </div>
+      {{--  title error  --}}
+      @if(flashMessages.has('errors.title'))
+      <script type="module">
+        $('#titleInput').addClass('is-invalid')
+        $('#titleError').css({'display':'inline-block'})
+      </script>
+      @endif
+
+      {{--  description  --}}
+      <div class="col-12 col-sm-8 col-md-5">
+        <div class="form-floating mb-3">
+          <textarea class="form-control" placeholder="Leave a description here" id="descriptionInput" name="description"
+            value="{{ flashMessages.get('description', '') }}" style="height: 100px" required></textarea>
+          <label for="floatingTextarea2">Post Description</label>
+          <p class="fs-6 text-danger mb-0" id="descriptionError" style="display:none;">
+            {{ flashMessages.get('errors.description') }}
+          </p>
+        </div>
+      </div>
+      {{--  description error  --}}
+      @if(flashMessages.has('errors.description'))
+      <script type="module">
+        $('#descriptionInput').addClass('is-invalid')
+        $('#descriptionError').css({'display':'inline-block'})
+      </script>
+      @endif
+
+      {{--  postImage dropdown  --}}
+      <div class="col-12 col-sm-8 col-md-5">
+        <div class="form-floating mb-3">
+          <div class="input-group mb-3">
+            <label class="input-group-text" for="inputGroupFile01">Upload</label>
+            <input type="file" class="form-control" id="inputGroupFile01">
+          </div>
+          <p class="fs-6 text-danger mb-0" id="postImageError" style="display:none;">
+            {{ flashMessages.get('errors.postImage') }}
+          </p>
+        </div>
+      </div>
+      {{--  postImage error  --}}
+      @if(flashMessages.has('errors.postImage'))
+      <script type="module">
+        $('#postImageInput').addClass('is-invalid')
+            $('#postImageError').css({'display':'inline-block'})
+        </script>
+      @endif
+
+      <div class="col-12 col-sm-8 col-md-5">
+        <div class="row align-items-center">
+          {{--  tags  --}}
+          <div class="col-12 col-sm-10">
+            <div class="form-floating">
+              <input type="text" class="form-control" id="tagInput" name="tag" placeholder="create song"
+                value="{{ flashMessages.get('tag', '') }}" required>
+              <label for="floatingInput">Post tag</label>
+              <p class="fs-6 text-danger mb-0" id="tagError" style="display:none;">
+                {{ flashMessages.get('errors.tag') }}
+              </p>
+            </div>
+          </div>
+          {{--  postImage error  --}}
+          @if(flashMessages.has('errors.postImage'))
+          <script type="module">
+            $('#postImageInput').addClass('is-invalid')
+            $('#postImageError').css({'display':'inline-block'})
+        </script>
+          @endif
+
+          {{--  Add button  --}}
+          <div class="col-12 col-sm-2">
+            <button type="button" class="btn btn-primary" id="addTab">Add</button>
+          </div>
+        </div>
+      </div>
+
+      {{--  tag view  --}}
+      <div class="col-12 col-sm-8 col-md-5 mt-4">
+        <div class="p-3 border rounded" id="tabContainer">
+          {{--  <div class="btn btn-secondary mt-1" id="btn">
+            <p style="display:contents;" class="text-capitalize" id="">tower</p>
+            <button type="button" class="btn-close ps-2 btn-close-white btn-sm" aria-label="Close" id="closeBtn"
+              style="display:inline-block;">
+            </button>
+          </div>  --}}
+        </div>
+      </div>
+
+      {{--  buttons  --}}
+      <div class="col-12 col-sm-8 col-md-5 mt-4">
+        <button class="btn btn-primary" type="submit">Create Post</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+
+<script type="module">
+  let index = 0
+  let tags = []
+
+  $('#closeBtn').on('click', function () {
+    $('#btn').addClass('fade')
+  })
+
+  $('#addTab').on('click', function () {
+    let i = ++index
+    $('#tabContainer')
+    .append(`<div class="btn btn-secondary mt-1 ms-1" id=${i}> </div>`)
+
+    $('#' + index).append(`<p style="display:contents;" class="text-capitalize" id=p_${i}> ${$('#tagInput').val()} </p>`)
+    $('#p_' + i).val( $('#tagInput').val() )
+    $('#' + index).append(` <button type="button" class="btn-close ps-2 btn-close-white btn-sm" aria-label="Close"
+      id="closeBtn"> </button>`)
+
+    // add values into the array
+    tags.push($('#tagInput').val())
+
+    // resetting input text null
+    $('#tagInput').val('')
+  })
+</script>
+@endsection

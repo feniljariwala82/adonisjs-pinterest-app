@@ -47,7 +47,7 @@ export default class HomeController {
   /**
    * @description home page of the application
    */
-  public async index({ view }: HttpContextContract) {
-    return view.render('welcome', { data })
+  public async index({ view, auth }: HttpContextContract) {
+    return view.render('welcome', { data, auth })
   }
 }

@@ -38,10 +38,10 @@ export default class PostsController {
     let payload = await request.validate(CreatePostValidator)
 
     // moving file to the uploads folder
-    await payload.post_image.move(Application.tmpPath('uploads'))
-    let imgName = payload.post_image.fileName
+    await payload.postImage.move(Application.tmpPath('uploads'))
+    let imgName = payload.postImage.fileName
 
-    // creating a todo
+    // creating a post
     try {
       let result = await Post.store(payload, imgName!, auth.user!.id)
       session.flash({ success: result })
@@ -59,7 +59,7 @@ export default class PostsController {
   public async show({ params, view, session, response, bouncer }: HttpContextContract) {
     let { id } = params
 
-    // fetching particular task
+    // fetching particular post
     try {
       let post = await Post.getPostById(id)
 
@@ -86,7 +86,7 @@ export default class PostsController {
   public async edit({ params, view, session, response, bouncer }: HttpContextContract) {
     let { id } = params
 
-    // fetching particular task
+    // fetching particular post
     try {
       let post = await Post.getPostById(id)
 
@@ -116,8 +116,8 @@ export default class PostsController {
     let payload = await request.validate(CreatePostValidator)
 
     // moving file to the uploads folder
-    await payload.post_image.move(Application.tmpPath('uploads'))
-    let imgName = payload.post_image.fileName
+    await payload.postImage.move(Application.tmpPath('uploads'))
+    let imgName = payload.postImage.fileName
 
     // checking authorization
     let post = await Post.getPostById(id)

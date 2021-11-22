@@ -44,7 +44,7 @@ export default class AuthController {
         try {
           await auth.use('web').login(user)
           session.flash({ success: 'Logged in' })
-          return response.redirect().toRoute('dashboard')
+          return response.redirect().toRoute('home')
         } catch (error) {
           console.error(error.message)
           session.flash({ error: error.message })

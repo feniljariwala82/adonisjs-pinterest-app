@@ -43,8 +43,8 @@ export default class Post extends BaseModel {
    */
   public static async getAll(userId: number) {
     try {
-      let posts = await User.query().where('id', userId).preload('posts').first()
-      return Promise.resolve(posts)
+      let user = await User.query().where('id', userId).preload('posts').first()
+      return Promise.resolve(user?.posts)
     } catch (error) {
       console.error(error)
       return Promise.reject(error.message)
