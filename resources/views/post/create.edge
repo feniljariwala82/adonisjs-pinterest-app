@@ -6,8 +6,9 @@
 
   {{--  <img src="" id="preview" class="img-thumbnail" alt="Preview image">  --}}
 
-  <form action="{{ route('post.store') }}" method="POST" id="myForm" enctype="multipart/form-data">
+  <form action="{{ route('post.store') }}" method="POST" id="myForm">
     {{ csrfField() }}
+
     <div class="d-flex flex-column align-items-center">
       <div class="col align-items-start">
         <h4 class="mb-4 fs-4 fw-bold">Create Post</h4>
@@ -56,7 +57,8 @@
         <div class="form-floating mb-3">
           <div class="input-group mb-3">
             <label class="input-group-text" for="inputGroupFile01">Upload</label>
-            <input type="file" class="form-control" name="postImage" value="{{ flashMessages.get('postImage', '') }}">
+            <input type="file" class="form-control" id="postImage" name="postImage"
+              value="{{ flashMessages.get('postImage', '') }}">
           </div>
           <p class="fs-6 text-danger mb-0 text-capitalize" id="postImageError" style="display:none;">
             {{ flashMessages.get('errors.postImage') }}
@@ -97,7 +99,7 @@
           @endif
 
           {{--  Add button  --}}
-          <div class="col-12 col-sm-2">
+          <div class="col-12 col-sm-2 mt-2 mt-sm-0">
             <button type="button" class="btn btn-primary" id="addTab">Add</button>
           </div>
         </div>
@@ -105,14 +107,14 @@
 
       {{--  tag view  --}}
       <div class="col-12 col-sm-8 col-md-5 mt-4">
-        <div class="p-3 border rounded" id="tabContainer">
+        <div class="p-4 border rounded" id="tabContainer">
 
         </div>
       </div>
 
       {{--  buttons  --}}
       <div class="col-12 col-sm-8 col-md-5 mt-4">
-        <button class="btn btn-primary" type="submit">Create Post</button>
+        <button class="btn btn-primary" id="createPost">Create Post</button>
       </div>
     </div>
   </form>
@@ -175,31 +177,41 @@
     //   reader.readAsDataURL(this.files[0]);
     // });
 
-    //  $("#myForm").submit(( event ) => {
-    //   event.preventDefault()
+    let file 
+    $('#postImage').on('change', function (event) {
+      event.preventDefault()
+      file = this.files[0]
+    })
 
-    //   let formData = {
-    //     title: $('#titleInput').val(),
-    //     description: $('#descriptionInput').val(),
-    //     postImage: file,
-    //     tags: tags,
-    //     _csrf: $('input[name="_csrf"]').val()
-    //   }
+    $('#createPost').on('click', function (event) {
+      event.preventDefault()
 
-    //   console.log(formData)
+      let formData = {
+        title: $('#titleInput').val(),
+        description: $('#descriptionInput').val(),
+        tags: tags,
+        _csrf: $('input[name="_csrf"]').val(),
+        postImage: file
+      }
+  
+      console.log(formData)
 
-    //    $.ajax({
-    //      url: "{{ route('post.store') }}",
-    //      method: 'POST',
-    //      data: formData
-    //    })
-    //      .done(() => {
-    //        console.log('Done')
-    //      })
-    //      .fail((err) => {
-    //        console.log(err)
-    //      })
-    //  })
+      // sending the request
+      $.ajax({
+        url: "{{ route('post.store') }}",
+        method: 'POST',
+        data: formData,
+        async: true,
+        contentType: false,
+        processData: false,
+      })
+        .done((success) => {
+          
+        })
+        .fail((error) => {
+          console.log(error)
+        })
+    })
   })
 </script>
 @endsection

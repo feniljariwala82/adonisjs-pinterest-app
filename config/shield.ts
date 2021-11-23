@@ -108,7 +108,7 @@ export const csrf: ShieldConfig['csrf'] = {
   | AJAX requests.
   |
   */
-  enableXsrfCookie: true,
+  enableXsrfCookie: false,
 
   /*
   |--------------------------------------------------------------------------

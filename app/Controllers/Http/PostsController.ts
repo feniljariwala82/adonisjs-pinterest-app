@@ -39,11 +39,10 @@ export default class PostsController {
 
     // validate data
     let payload = await request.validate(CreatePostValidator)
-    let tags = payload.tags.split(',')
 
     // moving file to the uploads folder
     await payload.postImage.move(Application.tmpPath('uploads'), {
-      name: cuid() + payload.postImage.extname,
+      name: cuid() + '.' + payload.postImage.extname,
     })
     let imgName = payload.postImage.fileName
 
@@ -54,7 +53,7 @@ export default class PostsController {
       // creating tags
 
       session.flash({ success: '' })
-      return response.redirect().toRoute('task.index')
+      return response.redirect().toRoute('post.index')
     } catch (error) {
       console.error(error)
       session.flash({ error })

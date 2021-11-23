@@ -11,7 +11,7 @@ export default class CreatePostValidator {
       size: '2mb',
       extnames: ['jpg', 'png'],
     }),
-    tags: schema.string({ trim: true }, [rules.required()]),
+    tags: schema.array.optional([rules.minLength(1)]).members(schema.string()),
   })
 
   public messages = {
@@ -20,5 +20,7 @@ export default class CreatePostValidator {
     'description.maxLength': 'Description can not be longer than 400 characters',
     'postImage.size': 'Image size should not be greater than 2mb',
     'postImage.extnames': 'Image should be jpg or png only',
+    'tags.minLength': 'At least one tag should be entered',
+    'tags.alpha': 'Tags can contain alphabets only',
   }
 }
