@@ -3,6 +3,8 @@ import Post from 'App/Models/Post'
 import CreatePostValidator from 'App/Validators/CreatePostValidator'
 import Application from '@ioc:Adonis/Core/Application'
 import { cuid } from '@ioc:Adonis/Core/Helpers'
+import Tag from 'App/Models/Tag'
+import PostTag from 'App/Models/PostTag'
 
 export default class PostsController {
   /**
@@ -15,7 +17,7 @@ export default class PostsController {
     }
 
     try {
-      let posts = await Post.getAll(auth.user.id)
+      let posts = await Post.getAllByUser(auth.user.id)
       return view.render('post/index', { posts })
     } catch (error) {
       console.error(error)
@@ -42,44 +44,54 @@ export default class PostsController {
 
     // moving file to the uploads folder
     await payload.postImage.move(Application.tmpPath('uploads'), {
+      // renaming the file
       name: cuid() + '.' + payload.postImage.extname,
     })
     let imgName = payload.postImage.fileName
 
     // creating a post
+    let post: Post
     try {
-      let result = await Post.store(payload, imgName!, auth.user!.id)
-
-      // creating tags
-
-      session.flash({ success: '' })
-      return response.redirect().toRoute('post.index')
+      post = await Post.store(payload, imgName!, auth.user!.id)
     } catch (error) {
       console.error(error)
       session.flash({ error })
       return response.redirect().back()
     }
+
+    // creating tags
+    let tagIds: Array<number>
+    try {
+      // Non-null assertion operator
+      tagIds = await Tag.store(payload.tags!)
+    } catch (error) {
+      console.error(error)
+      session.flash({ error })
+      return response.redirect().back()
+    }
+
+    // create relationships
+    try {
+      await PostTag.store(post.id, tagIds)
+    } catch (error) {
+      console.error(error)
+      session.flash({ error })
+      return response.redirect().back()
+    }
+
+    session.flash({ success: 'post created' })
+    return response.redirect().toRoute('post.index')
   }
 
   /**
    * @description show particular post
    */
-  public async show({ params, view, session, response, bouncer }: HttpContextContract) {
+  public async show({ params, view, session, response }: HttpContextContract) {
     let { id } = params
 
     // fetching particular post
     try {
       let post = await Post.getPostById(id)
-
-      // checking authorization
-      try {
-        await bouncer.with('PostPolicy').authorize('view', post)
-      } catch (error) {
-        console.log(error)
-        session.flash({ error: 'Not authorized to perform this action' })
-        return response.redirect().back()
-      }
-
       return view.render('post/show', { post })
     } catch (error) {
       console.error(error)
@@ -115,7 +127,7 @@ export default class PostsController {
   }
 
   /**
-   * @description show particular post
+   * @description update particular post
    */
   public async update({ params, session, response, request, bouncer }: HttpContextContract) {
     let { id } = params

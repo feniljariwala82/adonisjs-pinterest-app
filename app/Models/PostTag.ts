@@ -32,4 +32,26 @@ export default class PostTag extends BaseModel {
     foreignKey: 'tag_id', // foreign key in this table
   })
   public tag: BelongsTo<typeof Tag>
+
+  /**
+   * @description the method to create PostTag pivot data
+   * @param postId post id
+   * @param tagIds array of tag ids
+   * @returns Promise
+   */
+  public static async store(postId: number, tagIds: Array<number>) {
+    for (const tagId of tagIds) {
+      try {
+        await this.create({
+          post_id: postId,
+          tag_id: tagId,
+        })
+      } catch (error) {
+        console.log(error)
+        return Promise.reject(error.message)
+      }
+    }
+
+    return Promise.resolve('Post tags created')
+  }
 }

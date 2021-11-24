@@ -1,7 +1,17 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column, BelongsTo, belongsTo, hasMany, HasMany } from '@ioc:Adonis/Lucid/Orm'
+import {
+  BaseModel,
+  column,
+  BelongsTo,
+  belongsTo,
+  hasMany,
+  HasMany,
+  afterFetch,
+  afterFind,
+} from '@ioc:Adonis/Lucid/Orm'
 import User from 'App/Models/User'
 import PostTag from 'App/Models/PostTag'
+import Drive from '@ioc:Adonis/Core/Drive'
 
 type PostType = {
   title: string
@@ -43,14 +53,57 @@ export default class Post extends BaseModel {
   })
   public postTags: HasMany<typeof PostTag>
 
+  // when single file is fetched
+  @afterFind()
+  public static async afterFind(post) {
+    console.log('after find')
+    post.image_name = await Drive.getUrl(post.image_name)
+  }
+
+  // when multiple file is fetched
+  @afterFetch()
+  public static async afterFetch(posts: Post[]) {
+    console.log('after fetch')
+    for (const post of posts) {
+      // post.image_name = await Drive.getUrl(Application.tmpPath('uploads/'))
+      post.image_name = await Drive.getUrl(post.image_name)
+    }
+  }
+
+  /**
+   * @description method to get all the posts
+   * @returns Promise
+   */
+  public static async getAll() {
+    try {
+      let posts = await this.query()
+        .preload('user')
+        .preload('postTags', (postTagQuery) => {
+          postTagQuery.preload('tag')
+        })
+
+      return Promise.resolve(posts)
+    } catch (error) {
+      console.error(error)
+      return Promise.reject(error.message)
+    }
+  }
+
   /**
    * @description method to find all the posts for particular user
    * @param userId user id
    * @returns Promise
    */
-  public static async getAll(userId: number) {
+  public static async getAllByUser(userId: number) {
     try {
-      let user = await User.query().where('id', userId).preload('posts').first()
+      let user = await User.query()
+        .where('id', userId)
+        .preload('posts', (postQuery) => {
+          postQuery.preload('postTags', (postTagQuery) => {
+            postTagQuery.preload('tag')
+          })
+        })
+        .first()
       return Promise.resolve(user?.posts)
     } catch (error) {
       console.error(error)
@@ -85,8 +138,20 @@ export default class Post extends BaseModel {
    */
   public static async getPostById(id: number) {
     try {
-      let result = await this.findOrFail(id)
-      return Promise.resolve(result)
+      let post = await this.query()
+        .where('id', id)
+        .preload('user')
+        .preload('postTags', (postTagQuery) => {
+          postTagQuery.preload('tag')
+        })
+        .first()
+
+      if (!post) {
+        return Promise.reject('Post not found')
+      }
+
+      console.log(post)
+      return Promise.resolve(post)
     } catch (error) {
       console.error(error)
       return Promise.reject(error.message)
@@ -103,6 +168,7 @@ export default class Post extends BaseModel {
     // task exists or not
     let task: Post
     try {
+      // TODO this needs to be updated
       task = await this.getPostById(id)
     } catch (error) {
       console.error(error)

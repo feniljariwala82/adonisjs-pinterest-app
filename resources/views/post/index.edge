@@ -4,18 +4,23 @@
 @section('content')
 
 <div class="container">
-  @each(post in posts)
-  <div class="row">
-    {{--  each loop for all the posts  --}}
-
+  <div class="row mt-4" data-masonry='{"percentPosition": true }'>
+    @each(post in posts)
+    <div class="col-6 col-sm-6 col-md-3 col-lg-2">
+      {{--  post card  --}}
+      <a href="{{ route('post.show', {id: post.id}) }}">
+        <img src="{{ post.image_name }}" class="card-img-bottom card-img-top" alt="image1">
+        <div class="card-body">
+          <h5 class="card-title text-center fs-6">{{ post.title.charAt(0).toUpperCase() +  post.title.slice(1) }}</h5>
+        </div>
+      </a>
+    </div>
+    @else
+    <div class="mt-4 text-center">
+      <p class="fs-4">You don't have any post. Create some post by clicking here</p>
+      <a type="button" class="btn btn-primary" href="{{ route('post.create') }}">Create</a>
+    </div>
+    @endeach
   </div>
-  @else
-  <div class="mt-4 text-center">
-    <p class="fs-4">You don't have any post. Create some post by clicking here</p>
-    <a type="button" class="btn btn-primary" href="{{ route('post.create') }}">Create</a>
-  </div>
-  @endeach
 </div>
-</div>
-
 @endsection

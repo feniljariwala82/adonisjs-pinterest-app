@@ -41,4 +41,42 @@ export default class Tag extends BaseModel {
       return Promise.reject(error.message)
     }
   }
+
+  /**
+   * @description the method to create tags
+   * @param tags tags to be added
+   * @returns Promise
+   */
+  public static async store(tags: Array<string>) {
+    let tagIds: Array<number> = []
+    for (const tag of tags) {
+      // checking tag exists or not
+      let exists: Tag | null
+      try {
+        exists = await this.findBy('title', tag)
+      } catch (error) {
+        console.error(error)
+        return Promise.reject(error.message)
+      }
+
+      // if exists ignore, if does not exists then add new one
+      if (exists) {
+        // if tag exists then adding id to the id array, for mapping post to this tag
+        tagIds.push(exists.id)
+      } else {
+        // create new tag and adding id for mapping the post to this tag
+        try {
+          let createdTag = await this.create({
+            title: tag,
+          })
+          tagIds.push(createdTag.id)
+        } catch (error) {
+          console.error(error)
+          return Promise.reject(error.message)
+        }
+      }
+    }
+
+    return Promise.resolve(tagIds)
+  }
 }

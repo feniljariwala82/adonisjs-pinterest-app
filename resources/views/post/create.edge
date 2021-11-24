@@ -193,17 +193,11 @@
       formData.append('title', $('#titleInput').val())
       formData.append('description', $('#descriptionInput').val())
       formData.append('_csrf', $("input[name=_csrf]").val())
-      formData.append('tags[]', tags)
-
-      let data = {
-        title: formData.get('title'),
-        description: formData.get('description'),
-        _csrf: formData.get('_csrf'),
-        postImage: formData.get('postImage'),
-        tags: tags,
+      for (var i = 0; i < tags.length; i++) {
+          formData.append('tags[]', tags[i]);
       }
   
-      console.log(data)
+      console.log(formData)
 
       // sending the request
       $.ajax({
@@ -224,9 +218,13 @@
       })
       .done(() => {
         console.log('Success')
+        window.location.href = "{{ route('post.index') }}"
       })
       .fail((err) => {
         console.log(err)
+        var toast = Toast('#errorToast')
+        $('#errorMessage').html(error.responseText)
+        toast.show()
       })
     })
   })

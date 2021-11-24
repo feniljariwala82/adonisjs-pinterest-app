@@ -1,1 +1,46 @@
+@layout('layouts/main')
+@set('title', 'Show')
 
+@section('content')
+<div class="container">
+  <div class="row mt-4 border rounded p-4">
+
+    {{--  image container  --}}
+    <div class="col-12 col-sm-6">
+      <img src="{{ post.image_name }}" class="card-img-bottom card-img-top" alt="image1">
+    </div>
+
+    {{--  body container  --}}
+    <div class="col-12 col-sm-6">
+      <div class="card-body">
+        <h3>
+          Title
+          <small class="text-muted"> {{ post.title.charAt(0).toUpperCase() +  post.title.slice(1) }}</small>
+        </h3>
+
+        <h3>
+          Description
+          <small class="text-muted">{{ post.description.charAt(0).toUpperCase() +  post.description.slice(1) }}</small>
+        </h3>
+
+        <h3>
+          Tags
+        </h3>
+        <div class="p-4 border rounded mt-1" id="tabContainer">
+          @each(postTag in post.postTags)
+          <span class="badge rounded-pill bg-secondary text-capitalize mt-1 ms-1 p-2" style="cursor:pointer;">
+            {{ postTag.tag.title }}
+          </span>
+          @else
+          <div class="mt-4 text-center">
+            <p class="fs-4">No tags found</p>
+          </div>
+          @endeach
+        </div>
+
+
+      </div>
+    </div>
+  </div>
+</div>
+@endsection
