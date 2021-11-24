@@ -13,7 +13,7 @@ export default class CreatePostValidator {
       size: '2mb',
       extnames: ['jpg', 'png'],
     }),
-    tags: schema.array.optional([rules.minLength(1)]).members(schema.string()),
+    tags: schema.array([rules.minLength(1)]).members(schema.string()),
   })
 
   public messages = {

@@ -2,10 +2,10 @@
   "entrypoints": {
     "app": {
       "css": [
-        "/assets/app.ea14e53b.css"
+        "http://localhost:8080/assets/app.css"
       ],
       "js": [
-        "/assets/app.ed01a1fa.js"
+        "http://localhost:8080/assets/app.js"
       ]
     }
   }

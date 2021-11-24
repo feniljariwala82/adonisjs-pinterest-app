@@ -150,7 +150,6 @@ export default class Post extends BaseModel {
         return Promise.reject('Post not found')
       }
 
-      console.log(post)
       return Promise.resolve(post)
     } catch (error) {
       console.error(error)

@@ -22,4 +22,5 @@ Route.resource('/post', 'PostsController').middleware({
   store: 'auth',
   index: 'auth',
   update: 'auth',
+  show: 'silentAuth',
 })
