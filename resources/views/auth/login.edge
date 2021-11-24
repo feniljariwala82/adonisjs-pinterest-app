@@ -55,4 +55,28 @@
   </form>
 </div>
 
+{{--  <script type="module">
+
+  $('#submit').on('click', function (e){
+    e.preventDefault()
+
+    let data = {
+      email: $('#emailInput').val(),
+      password: $('#passwordInput').val(),
+      _csrf: $("input[name=_csrf]").val(),
+    }
+
+    $.ajax({
+      url: "{{ route('auth.login') }}",
+method: 'POST',
+async: true,
+data
+}).done(() => {
+console.log('Success')
+}).fail((err) => {
+console.log(err)
+})
+})
+
+</script> --}}
 @endsection

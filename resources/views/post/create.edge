@@ -114,7 +114,7 @@
 
       {{--  buttons  --}}
       <div class="col-12 col-sm-8 col-md-5 mt-4">
-        <button class="btn btn-primary" id="createPost">Create Post</button>
+        <button class="btn btn-primary" id="submit">Create Post</button>
       </div>
     </div>
   </form>
@@ -177,40 +177,57 @@
     //   reader.readAsDataURL(this.files[0]);
     // });
 
+    let formData = new FormData()
+
     let file 
     $('#postImage').on('change', function (event) {
       event.preventDefault()
       file = this.files[0]
+      formData.append('postImage', file)
     })
 
-    $('#createPost').on('click', function (event) {
+    $('#submit').on('click', function (event) {
       event.preventDefault()
+      var that = this;
 
-      let formData = {
-        title: $('#titleInput').val(),
-        description: $('#descriptionInput').val(),
+      formData.append('title', $('#titleInput').val())
+      formData.append('description', $('#descriptionInput').val())
+      formData.append('_csrf', $("input[name=_csrf]").val())
+      formData.append('tags[]', tags)
+
+      let data = {
+        title: formData.get('title'),
+        description: formData.get('description'),
+        _csrf: formData.get('_csrf'),
+        postImage: formData.get('postImage'),
         tags: tags,
-        _csrf: $('input[name="_csrf"]').val(),
-        postImage: file
       }
   
-      console.log(formData)
+      console.log(data)
 
       // sending the request
       $.ajax({
         url: "{{ route('post.store') }}",
         method: 'POST',
+        xhr: function () {
+          var myXhr = $.ajaxSettings.xhr();
+          if (myXhr.upload) {
+              myXhr.upload.addEventListener('progress', that.progressHandling, false);
+          }
+          return myXhr;
+        },
         data: formData,
-        async: true,
+        cache: false,
         contentType: false,
         processData: false,
+        timeout: 60000
       })
-        .done((success) => {
-          
-        })
-        .fail((error) => {
-          console.log(error)
-        })
+      .done(() => {
+        console.log('Success')
+      })
+      .fail((err) => {
+        console.log(err)
+      })
     })
   })
 </script>
