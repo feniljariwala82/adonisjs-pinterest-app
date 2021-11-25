@@ -3,7 +3,7 @@
 
    {{--  Success toast message  --}}
    @if(flashMessages.has('success'))
-   <div class="toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3" role="alert"
+   <div class="toast align-items-center text-white bg-success border-0 position-fixed bottom-0 end-0 m-3" role="alert"
      aria-live="assertive" aria-atomic="true" id="successToast" style="z-index: 11;">
      <div class="d-flex">
        <div class="toast-body text-light text-capitalize" id="successMessage">
@@ -21,7 +21,7 @@
 
    {{--  Warning toast message  --}}
    @if(flashMessages.has('warning'))
-   <div class="toast align-items-center text-white bg-warning border-0 position-fixed top-0 end-0 m-3" role="alert"
+   <div class="toast align-items-center text-white bg-warning border-0 position-fixed bottom-0 end-0 m-3" role="alert"
      aria-live="assertive" aria-atomic="true" id="warningToast" style="z-index: 11;">
      <div class="d-flex">
        <div class="toast-body text-light text-capitalize" id="warningMessage">
@@ -39,7 +39,7 @@
 
    {{--  Error toast message  --}}
    @if(flashMessages.has('error'))
-   <div class="toast align-items-center text-white bg-danger border-0 position-fixed top-0 end-0 m-3" role="alert"
+   <div class="toast align-items-center text-white bg-danger border-0 position-fixed bottom-0 end-0 m-3" role="alert"
      aria-live="assertive" aria-atomic="true" id="errorToast" style="z-index: 11;">
      <div class="d-flex">
        <div class="toast-body text-light text-capitalize" id="errorMessage">
@@ -57,7 +57,7 @@
 
    {{--  Information toast message  --}}
    @if(flashMessages.has('info'))
-   <div class="toast align-items-center text-white bg-info border-0 position-fixed top-0 end-0 m-3" role="alert"
+   <div class="toast align-items-center text-white bg-info border-0 position-fixed bottom-0 end-0 m-3" role="alert"
      aria-live="assertive" aria-atomic="true" id="infoToast" style="z-index: 11;">
      <div class="d-flex">
        <div class="toast-body text-light text-capitalize" id="infoMessage">

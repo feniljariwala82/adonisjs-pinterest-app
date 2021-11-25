@@ -19,6 +19,10 @@
 
       </div>
 
+      <div class="col-12 col-sm-8 col-md-5" id="imgContainer" style="display:none;">
+        <img src="" class="img-thumbnail" alt="Image" id="upImage">
+      </div>
+
       {{--  title  --}}
       <div class="col-12 col-sm-8 col-md-5">
         <div class="form-floating mb-3">
@@ -86,9 +90,6 @@
               {{--  input  --}}
               <input type="text" class="form-control" id="tagInput" placeholder="create tag">
 
-              {{--  hidden form field  --}}
-              <input type="text" class="form-control" id="tags" name="tags" placeholder="create tag" hidden>
-
               <label for="floatingInput">Post tag</label>
               <p class="fs-6 text-danger mb-0" id="tagError" style="display:none;">
                 {{ flashMessages.get('errors.tags') }}
@@ -117,6 +118,10 @@
         </div>
       </div>
 
+      <div id="demo">
+
+      </div>
+
       {{--  buttons  --}}
       <div class="col-12 col-sm-8 col-md-5 mt-4">
         <button class="btn btn-primary" id="submit">Create Post</button>
@@ -130,36 +135,41 @@
   $(document).ready(function () {
     let index = 0
     let tags = []
-  
+
+    const showErrorAlert = (message) => {
+      $('#alertContainer')
+        .append('<div class="alert alert-dismissible fade show text-capitalize" role="alert" id="alert"></div>')
+      $('#alert')
+        .append(`<strong>Error! </strong> ${message}`)
+        .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button> ')
+        .addClass('alert-danger')
+    }
+
     $('#closeBtn').on('click', function () {
       $('#btn').addClass('fade')
     })
-  
+
     $('#addTab').on('click', function (e) {
       e.preventDefault()
 
       // adding new tag into array
       let res = /^[a-zA-Z]+$/.test($('#tagInput').val());
-      if(res) {
+      if (res) {
         tags.push($('#tagInput').val())
       } else {
         // appending error alert
-        $('#alertContainer')
-          .append('<div class="alert alert-dismissible fade show" role="alert" id="alert"></div>')
-        $('#alert')
-          .append('<strong>Error! </strong> Tags can contain alphabets only')
-          .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button> ')
-          .addClass('alert-danger')
+        showErrorAlert('Tags can contain alphabets with no space only')
         return
       }
-      
+
       let i = ++index
-      $('#tabContainer').append(`<span class="badge rounded-pill bg-secondary text-capitalize mt-1 ms-1 p-2" id=${i} style="cursor:pointer;"></span>`)
-  
+      $('#tabContainer').append(
+        `<span class="badge rounded-pill bg-secondary text-capitalize mt-1 ms-1 p-2" id=${i} style="cursor:pointer;"> </span>`
+      )
+
       // assigning value to the badge
       $('#' + i).text($('#tagInput').val())
-  
-  
+
       // close button
       $('#' + i).on('click', function () {
         // removing from the tabs array
@@ -167,39 +177,34 @@
         if (index !== -1) {
           tags.splice(index, 1)
         }
-  
+
         // fading tag
-        $('#' + i).remove()
-  
-        // add tags to input on delete update input value
-        $("input[name='tags']").val(tags)
+        $('#' + i).addClass('fade').remove()
       })
-  
-      // add tags to input values
-      $("input[name='tags']").val(tags)
 
       // resetting input text null
       $('#tagInput').val('')
     })
 
     // let file
-    // $('input[type="file"]').change(function(e) {
-    //   console.log('changed')
-    //   var fileName = e.target.files[0].name;
-    
-    //   var reader = new FileReader();
-    //   reader.onload = function(e) {
-    //     // get loaded data and render thumbnail.
-    //     $("#preview").attr('src', e.target.result);
-    //   };
-    //   // read the image file as a data URL.
-    //   file = this.files[0]
-    //   reader.readAsDataURL(this.files[0]);
-    // });
+    $('input[type="file"]').change(function(e) {
+      console.log('changed')
+      var fileName = e.target.files[0].name;
+
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        // get loaded data and render thumbnail.
+        $("#imgContainer").css('display', 'block');
+        $("#upImage").attr('src', e.target.result);
+      };
+      // read the image file as a data URL.
+      file = this.files[0]
+      reader.readAsDataURL(this.files[0]);
+    });
 
     let formData = new FormData()
 
-    let file 
+    let file
     $('#postImage').on('change', function (event) {
       event.preventDefault()
       file = this.files[0]
@@ -214,50 +219,40 @@
       formData.append('description', $('#descriptionInput').val())
       formData.append('_csrf', $("input[name=_csrf]").val())
       for (var i = 0; i < tags.length; i++) {
-          formData.append('tags[]', tags[i]);
+        formData.append('tags[]', tags[i]);
       }
 
       // sending the request
       $.ajax({
-        url: "{{ route('post.store') }}",
-        method: 'POST',
-        xhr: function () {
-          var myXhr = $.ajaxSettings.xhr();
-          if (myXhr.upload) {
-              myXhr.upload.addEventListener('progress', that.progressHandling, false);
+          url: "{{ route('post.store') }}",
+          method: 'POST',
+          data: formData,
+          cache: false,
+          contentType: false,
+          processData: false,
+          timeout: 60000
+        })
+        .done(() => {
+          console.log('Success')
+          // window.location.href = "{{ route('post.index') }}"
+        })
+        .fail((error) => {
+          console.log(error)
+          let toastMessage = ''
+          let keys = []
+
+          if (error.responseJSON.errors) {
+            for (const err of error.responseJSON.errors) {
+              if (!keys.includes(err.field)) {
+                toastMessage = toastMessage + ', ' + err.message
+                keys.push(err.field)
+              }
+            }
+            showErrorAlert(toastMessage)
           }
-          return myXhr;
-        },
-        data: formData,
-        cache: false,
-        contentType: false,
-        processData: false,
-        timeout: 60000
-      })
-      .done(() => {
-        console.log('Success')
-        window.location.href = "{{ route('post.index') }}"
-      })
-      .fail((error) => {
-        console.log(error)
-        let toastMessage = ''
-        let keys = []
-
-        for (const err of error.responseJSON.errors) {
-          if(!keys.includes(err.field)) {
-            toastMessage = toastMessage + ', ' + err.message
-            keys.push(err.field)
-          }
-        }
-
-        console.log(toastMessage)
-
-        // showing toast message
-        var toast = new Toast('#errorToast')
-        $('#errorMessage').html(toastMessage)
-        toast.show()
-      })
+        })
     })
   })
+
 </script>
 @endsection
