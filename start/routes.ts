@@ -1,4 +1,5 @@
 import Route from '@ioc:Adonis/Core/Route'
+import './testingRoutes'
 
 // Authentication routes
 Route.group(() => {
@@ -17,10 +18,13 @@ Route.get('/', 'HomeController.index').as('home').middleware(['silentAuth'])
 // posts routes
 Route.resource('/post', 'PostsController').middleware({
   create: 'auth',
-  destroy: 'auth',
-  edit: 'auth',
   store: 'auth',
   index: 'auth',
-  update: 'auth',
   show: 'silentAuth',
+  edit: 'auth',
+  update: 'auth',
+  destroy: 'auth',
 })
+
+// Route for profile
+Route.resource('/profile', 'ProfilesController').middleware({ '*': ['silentAuth'] })

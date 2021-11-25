@@ -3,6 +3,14 @@
 
 @section('content')
 <div class="container">
+
+  <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ route('post.index') }}">Post</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Show</li>
+    </ol>
+  </nav>
+
   <div class="row mt-4 border rounded p-4">
 
     {{--  image container  --}}
@@ -13,19 +21,19 @@
     {{--  body container  --}}
     <div class="col-12 col-sm-6">
       <div class="card-body">
-        <h3>
+        <h4>
           Title
           <small class="text-muted"> {{ post.title.charAt(0).toUpperCase() +  post.title.slice(1) }}</small>
-        </h3>
+        </h4>
 
-        <h3>
+        <h4 class="mt-3">
           Description
           <small class="text-muted">{{ post.description.charAt(0).toUpperCase() +  post.description.slice(1) }}</small>
-        </h3>
+        </h4>
 
-        <h3>
+        <h4 class="mt-3">
           Tags
-        </h3>
+        </h4>
         <div class="p-4 border rounded mt-1" id="tabContainer">
           @each(postTag in post.postTags)
           <span class="badge rounded-pill bg-secondary text-capitalize mt-1 ms-1 p-2" style="cursor:pointer;">
@@ -37,8 +45,29 @@
           </div>
           @endeach
         </div>
+
+        <h4 class="mt-3">
+          Actions
+        </h4>
+        {{--  Buttons  --}}
+
+        <div id="actions" class="mt-4 d-flex">
+          {{--  edit button  --}}
+          <a class="btn btn-warning me-2" href="{{ route('post.edit', { id: post.id }) }}">
+            Edit
+          </a>
+
+
+          {{--  delete button  --}}
+          <form method="POST" action="{{ route('post.destroy', { id: post.id }, { qs: {
+                _method: 'DELETE'
+                }
+            }) }}" onsubmit="return confirm('You\'ve got to be kidding me, you sure you want to delete this post?');">
+            {{ csrfField() }}
+            <button class="btn btn-primary" type="submit">Delete</button>
+          </form>
+        </div>
       </div>
     </div>
   </div>
-</div>
-@endsection
+  @endsection

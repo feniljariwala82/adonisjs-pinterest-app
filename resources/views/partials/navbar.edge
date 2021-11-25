@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-md navbar-light bg-light">
+<nav class="navbar navbar-expand-md navbar-light bg-light shadow-sm p-3 mb-3 bg-body">
   <div class="container-fluid">
     <a class="navbar-brand fw-bold text-primary" href="/">Perest</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
@@ -11,7 +11,10 @@
         {{--  if condition  --}}
         @if(auth.isLoggedIn)
         <li class="nav-item">
-          <a class="nav-link active" aria-current="page" href="{{ route('post.index') }}">Profile</a>
+          <a class="nav-link active" aria-current="page" href="{{ route('profile.index') }}">Profile</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link active" aria-current="page" href="{{ route('post.index') }}">Posts</a>
         </li>
         <li class="nav-item">
           <a class="nav-link active" aria-current="page" href="{{ route('post.create') }}">Create</a>

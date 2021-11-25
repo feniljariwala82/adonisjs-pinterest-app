@@ -5,6 +5,9 @@ import Application from '@ioc:Adonis/Core/Application'
 import { cuid } from '@ioc:Adonis/Core/Helpers'
 import Tag from 'App/Models/Tag'
 import PostTag from 'App/Models/PostTag'
+import Drive from '@ioc:Adonis/Core/Drive'
+import fs from 'fs'
+import path from 'path'
 
 export default class PostsController {
   /**
@@ -176,6 +179,19 @@ export default class PostsController {
         session.flash({ error: 'Not authorized to perform this action' })
         return response.redirect().back()
       }
+
+      /**
+       * Removing image
+       */
+      fs.unlink(Application.tmpPath(post.image_name), (error) => {
+        if (error) {
+          console.error(error)
+          session.flash({ error: error.message })
+          return response.redirect().back()
+        }
+
+        console.log('File is deleted.')
+      })
 
       // deleting
       await post.delete()

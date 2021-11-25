@@ -4,14 +4,26 @@
 @section('content')
 <div class="container mb-5 mt-5">
 
+  <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ route('post.index') }}">Posts</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Create</li>
+    </ol>
+  </nav>
+
   {{--  <img src="" id="preview" class="img-thumbnail" alt="Preview image">  --}}
 
-  <form action="{{ route('post.store') }}" method="POST" id="myForm">
+  <form action="{{ route('post.store') }}" method="POST">
     {{ csrfField() }}
 
     <div class="d-flex flex-column justify-content-center align-items-center">
       <div class="col align-items-start">
         <h4 class="mb-4 fs-4 fw-bold">Create Post</h4>
+      </div>
+
+      {{--  alert container  --}}
+      <div class="col-12 col-sm-8 col-md-5" id="alertContainer">
+
       </div>
 
       {{--  alert container  --}}
@@ -234,7 +246,7 @@
         })
         .done(() => {
           console.log('Success')
-          // window.location.href = "{{ route('post.index') }}"
+          window.location.href = "{{ route('post.index') }}"
         })
         .fail((error) => {
           console.log(error)

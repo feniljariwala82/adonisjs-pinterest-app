@@ -1,1 +1,16 @@
+@layout('layouts/main')
+@set('title', 'Edit')
 
+@section('content')
+<div class="container">
+
+  <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ route('post.index') }}">Post</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Edit</li>
+    </ol>
+  </nav>
+
+  <p>Edit page</p>
+</div>
+@endsection
