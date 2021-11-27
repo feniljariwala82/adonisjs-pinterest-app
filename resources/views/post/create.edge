@@ -165,7 +165,7 @@
       e.preventDefault()
 
       // adding new tag into array
-      let res = /^[a-zA-Z]+$/.test($('#tagInput').val());
+      let res = /^[a-zA-Z ]+$/.test($('#tagInput').val());
       if (res) {
         tags.push($('#tagInput').val())
       } else {
@@ -253,7 +253,7 @@
           let toastMessage = ''
           let keys = []
 
-          if (error.responseJSON.errors) {
+          if (error.responseJSON && error.responseJSON.errors) {
             for (const err of error.responseJSON.errors) {
               if (!keys.includes(err.field)) {
                 toastMessage = toastMessage + ', ' + err.message

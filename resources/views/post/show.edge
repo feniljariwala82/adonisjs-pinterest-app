@@ -4,12 +4,19 @@
 @section('content')
 <div class="container">
 
+  @if(auth.user)
   <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><a href="{{ route('post.index') }}">Post</a></li>
       <li class="breadcrumb-item active" aria-current="page">Show</li>
     </ol>
   </nav>
+  @endif
+
+  <button type="button" class="btn btn-primary" id="back">
+    <i class="fas fa-long-arrow-alt-left"></i>
+    Go Back
+  </button>
 
   <div class="row mt-4 border rounded p-4">
 

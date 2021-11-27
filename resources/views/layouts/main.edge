@@ -27,6 +27,12 @@
 
   {{--  scripts  --}}
   @!section('scripts')
+
+  <script type="module">
+    $('#back').on('click', function () {
+      window.history.back()
+    })
+  </script>
 </body>
 
 </html>
