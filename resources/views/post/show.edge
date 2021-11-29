@@ -33,12 +33,12 @@
           <small class="text-muted"> {{ post.title.charAt(0).toUpperCase() +  post.title.slice(1) }}</small>
         </h4>
 
-        <h4 class="mt-3">
+        <h4 class="mt-4">
           Description
           <small class="text-muted">{{ post.description.charAt(0).toUpperCase() +  post.description.slice(1) }}</small>
         </h4>
 
-        <h4 class="mt-3">
+        <h4 class="mt-4">
           Tags
         </h4>
         <div class="p-4 border rounded mt-1" id="tabContainer">
@@ -53,7 +53,17 @@
           @endeach
         </div>
 
-        <h4 class="mt-3">
+        {{--  user details  --}}
+        <h4 class="mt-4">
+          Created By
+          <a class="text-primary text-capitalize" href="{{ route('profile.index', { email: post.user.email }) }}">
+            {{ post.user.first_name +' ' +  post.user.last_name }}
+          </a>
+        </h4>
+
+        {{--  showing edit and delete button if the post is posted by the user  --}}
+        @if(auth.user && auth.user.id === post.user_id)
+        <h4 class="mt-4">
           Actions
         </h4>
         {{--  Buttons  --}}
@@ -64,7 +74,6 @@
             Edit
           </a>
 
-
           {{--  delete button  --}}
           <form method="POST" action="{{ route('post.destroy', { id: post.id }, { qs: {
                 _method: 'DELETE'
@@ -74,6 +83,8 @@
             <button class="btn btn-primary" type="submit">Delete</button>
           </form>
         </div>
+        @endif
+
       </div>
     </div>
   </div>

@@ -67,7 +67,7 @@ export default class Tag extends BaseModel {
         // create new tag and adding id for mapping the post to this tag
         try {
           let createdTag = await this.create({
-            title: tag,
+            title: tag.toLocaleLowerCase(),
           })
           tagIds.push(createdTag.id)
         } catch (error) {

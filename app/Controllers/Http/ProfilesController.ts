@@ -5,15 +5,12 @@ export default class ProfilesController {
   /**
    * @description load all the posts for the user and profile
    */
-  public async index({ auth, session, response, view }: HttpContextContract) {
-    if (!auth.user) {
-      session.flash({ error: 'Please login to continue' })
-      return response.redirect().back()
-    }
+  public async index({ session, response, view, params }: HttpContextContract) {
+    let { email } = params
 
     try {
-      let posts = await Post.getAllByUser(auth.user.id)
-      return view.render('profile/index', { posts })
+      let user = await Post.getAllByUserEmail(email)
+      return view.render('profile/index', { user })
     } catch (error) {
       console.error(error)
       session.flash({ error })

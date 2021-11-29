@@ -84,9 +84,9 @@ export default class User extends BaseModel {
     // creating user
     try {
       await this.create({
-        first_name: user.firstName,
-        last_name: user.lastName,
-        email: user.email,
+        first_name: user.firstName.toLocaleLowerCase(),
+        last_name: user.lastName.toLocaleLowerCase(),
+        email: user.email.toLocaleLowerCase(),
         password: user.password,
       })
       return Promise.resolve('User created')

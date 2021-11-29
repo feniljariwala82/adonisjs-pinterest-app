@@ -12,18 +12,12 @@
   </nav>
 
   {{--  <img src="" id="preview" class="img-thumbnail" alt="Preview image">  --}}
-
-  <form action="{{ route('post.store') }}" method="POST">
+  <form action="{{ route('post.store') }}" method="POST" id="myForm">
     {{ csrfField() }}
 
     <div class="d-flex flex-column justify-content-center align-items-center">
       <div class="col align-items-start">
         <h4 class="mb-4 fs-4 fw-bold">Create Post</h4>
-      </div>
-
-      {{--  alert container  --}}
-      <div class="col-12 col-sm-8 col-md-5" id="alertContainer">
-
       </div>
 
       {{--  alert container  --}}
@@ -41,18 +35,8 @@
           <input type="text" class="form-control" id="titleInput" name="title" placeholder="create song"
             value="{{ flashMessages.get('title', '') }}" required>
           <label for="floatingInput">Post Title</label>
-          <p class="fs-6 text-danger mb-0" id="titleError" style="display:none;">
-            {{ flashMessages.get('errors.title') }}
-          </p>
         </div>
       </div>
-      {{--  title error  --}}
-      @if(flashMessages.has('errors.title'))
-      <script type="module">
-        $('#titleInput').addClass('is-invalid')
-        $('#titleError').css({'display':'inline-block'})
-      </script>
-      @endif
 
       {{--  description  --}}
       <div class="col-12 col-sm-8 col-md-5">
@@ -60,18 +44,8 @@
           <textarea class="form-control" placeholder="Leave a description here" id="descriptionInput" name="description"
             value="{{ flashMessages.get('description', '') }}" style="height: 100px" required></textarea>
           <label for="floatingTextarea2">Post Description</label>
-          <p class="fs-6 text-danger mb-0" id="descriptionError" style="display:none;">
-            {{ flashMessages.get('errors.description') }}
-          </p>
         </div>
       </div>
-      {{--  description error  --}}
-      @if(flashMessages.has('errors.description'))
-      <script type="module">
-        $('#descriptionInput').addClass('is-invalid')
-        $('#descriptionError').css({'display':'inline-block'})
-      </script>
-      @endif
 
       {{--  postImage dropdown  --}}
       <div class="col-12 col-sm-8 col-md-5">
@@ -81,18 +55,8 @@
             <input type="file" class="form-control" id="postImage" name="postImage"
               value="{{ flashMessages.get('postImage', '') }}">
           </div>
-          <p class="fs-6 text-danger mb-0 text-capitalize" id="postImageError" style="display:none;">
-            {{ flashMessages.get('errors.postImage') }}
-          </p>
         </div>
       </div>
-      {{--  postImage error  --}}
-      @if(flashMessages.has('errors.postImage'))
-      <script type="module">
-        $('#postImageInput').addClass('is-invalid')
-            $('#postImageError').css({'display':'inline-block'})
-        </script>
-      @endif
 
       <div class="col-12 col-sm-8 col-md-5">
         <div class="row align-items-center">
@@ -101,20 +65,9 @@
             <div class="form-floating">
               {{--  input  --}}
               <input type="text" class="form-control" id="tagInput" placeholder="create tag">
-
               <label for="floatingInput">Post tag</label>
-              <p class="fs-6 text-danger mb-0" id="tagError" style="display:none;">
-                {{ flashMessages.get('errors.tags') }}
-              </p>
             </div>
           </div>
-          {{--  tags error  --}}
-          @if(flashMessages.has('errors.tags'))
-          <script type="module">
-            $('#tagsInput').addClass('is-invalid')
-            $('#tagsError').css({'display':'inline-block'})
-        </script>
-          @endif
 
           {{--  Add button  --}}
           <div class="col-12 col-sm-2 mt-2 mt-sm-0">
@@ -130,10 +83,6 @@
         </div>
       </div>
 
-      <div id="demo">
-
-      </div>
-
       {{--  buttons  --}}
       <div class="col-12 col-sm-8 col-md-5 mt-4">
         <button class="btn btn-primary" id="submit">Create Post</button>
@@ -141,7 +90,6 @@
     </div>
   </form>
 </div>
-
 
 <script type="module">
   $(document).ready(function () {
@@ -152,7 +100,7 @@
       $('#alertContainer')
         .append('<div class="alert alert-dismissible fade show text-capitalize" role="alert" id="alert"></div>')
       $('#alert')
-        .append(`<strong>Error! </strong> ${message}`)
+        .append(`<strong>Error </strong>${message}`)
         .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button> ')
         .addClass('alert-danger')
     }
@@ -199,12 +147,12 @@
     })
 
     // let file
-    $('input[type="file"]').change(function(e) {
+    $('input[type="file"]').change(function (e) {
       console.log('changed')
       var fileName = e.target.files[0].name;
 
       var reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = function (e) {
         // get loaded data and render thumbnail.
         $("#imgContainer").css('display', 'block');
         $("#upImage").attr('src', e.target.result);
@@ -214,26 +162,31 @@
       reader.readAsDataURL(this.files[0]);
     });
 
-    let formData = new FormData()
+    let formData;
+    formData = new FormData()
 
+    // on image change adding image to the file object, that we can use in form data
     let file
     $('#postImage').on('change', function (event) {
       event.preventDefault()
       file = this.files[0]
-      formData.append('postImage', file)
     })
 
+    /**
+     * submit form using ajax
+    */
     $('#submit').on('click', function (event) {
       event.preventDefault()
       var that = this;
 
       formData.append('title', $('#titleInput').val())
       formData.append('description', $('#descriptionInput').val())
-      formData.append('_csrf', $("input[name=_csrf]").val())
+      formData.append('postImage', file)
+      // formData.append('_csrf', $("input[name=_csrf]").val())
       for (var i = 0; i < tags.length; i++) {
         formData.append('tags[]', tags[i]);
       }
-
+      
       // sending the request
       $.ajax({
           url: "{{ route('post.store') }}",
@@ -242,26 +195,21 @@
           cache: false,
           contentType: false,
           processData: false,
-          timeout: 60000
+          timeout: 60000,
+          headers: {
+            'X-XSRF-TOKEN': helper.getCookie('XSRF-TOKEN'),
+          },
         })
-        .done(() => {
+        .done((success) => {
           console.log('Success')
           window.location.href = "{{ route('post.index') }}"
         })
         .fail((error) => {
-          console.log(error)
-          let toastMessage = ''
-          let keys = []
-
-          if (error.responseJSON && error.responseJSON.errors) {
-            for (const err of error.responseJSON.errors) {
-              if (!keys.includes(err.field)) {
-                toastMessage = toastMessage + ', ' + err.message
-                keys.push(err.field)
-              }
-            }
-            showErrorAlert(toastMessage)
-          }
+          /**
+           * On error resetting form data for data duplication, 
+          */
+          formData = new FormData()
+          toast.error(error.responseText)
         })
     })
   })

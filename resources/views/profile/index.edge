@@ -5,6 +5,7 @@
 
 <div class="container">
 
+  {{--  bread crumb  --}}
   <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
@@ -12,8 +13,94 @@
     </ol>
   </nav>
 
-  <div class="row mt-4">
-    <p>Welcome</p>
+  {{--  user data  --}}
+  <div class="text-center">
+    <img src="{{ asset('assets/images/user.jpg') }}" class="rounded mx-auto d-block img-thumbnail" alt="User"
+      style="height:150px; width:150px;">
+
+    <h4 class="mt-4 fw-bold text-capitalize mt-2">
+      {{ user.first_name + ' ' + user.last_name }}
+    </h4>
+
+    <h5 class="fw-normal mt-2">
+      {{ user.email }}
+    </h5>
+
+    {{--  edit button, show only if it is the logged in user  --}}
+    <button type="button" class="btn btn-primary mt-2" id="shareBtn">
+      <i class="fas fa-share-alt"></i>
+      Share
+    </button>
+
+    @if(auth.user && auth.user.id === user.id)
+    <button type="button" class="btn btn-secondary mt-2">
+      <i class="fas fa-user-edit"></i>
+      Edit Profile
+    </button>
+    @endif
+  </div>
+
+  {{--  Modal  --}}
+  <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="staticBackdropLabel">Link Copied</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Link has been copied to the clipboard.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module">
+    function copyToClipboard() {
+      var inputc = document.body.appendChild(document.createElement("input"));
+      inputc.value = window.location.href;
+      inputc.focus();
+      inputc.select();
+      document.execCommand('copy');
+      inputc.parentNode.removeChild(inputc);
+
+    }
+
+    $('#shareBtn').on('click', function () {
+      copyToClipboard()
+      var modal = new Modal($('#staticBackdrop'), {
+        keyboard: true,
+      })
+
+      modal.toggle()
+    })
+  </script>
+
+  {{--  Showing all the posts by the user  --}}
+  <div class="row mt-4 justify-content-center align-items-center" data-masonry='{"percentPosition": true }'>
+    @each(post in user.posts)
+    <div class="col-6 col-sm-6 col-md-4 col-lg-3">
+      {{--  post card  --}}
+      <a href="{{ route('post.show', {id: post.id}) }}">
+        <img src="{{ post.image_name }}" class="card-img-bottom card-img-top" alt="image1">
+        <div class="card-body">
+          <h5 class="card-title text-center fs-6">{{ post.title.charAt(0).toUpperCase() +  post.title.slice(1) }}</h5>
+        </div>
+      </a>
+    </div>
+    @else
+    <div class="mt-4 text-center">
+      <p class="fs-4">You don't have any post. Create some post by clicking here</p>
+      <a type="button" class="btn btn-primary" href="{{ route('post.create') }}">Create</a>
+    </div>
+    @endeach
   </div>
 </div>
+
+<script type="text/javascript">
+
+</script>
 @endsection

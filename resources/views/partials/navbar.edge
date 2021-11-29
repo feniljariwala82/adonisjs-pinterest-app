@@ -11,9 +11,6 @@
         {{--  if condition  --}}
         @if(auth.isLoggedIn)
         <li class="nav-item">
-          <a class="nav-link active" aria-current="page" href="{{ route('profile.index') }}">Profile</a>
-        </li>
-        <li class="nav-item">
           <a class="nav-link active" aria-current="page" href="{{ route('post.index') }}">Posts</a>
         </li>
         <li class="nav-item">
@@ -25,7 +22,12 @@
             {{ auth.user.first_name.charAt(0).toUpperCase() + auth.user.first_name.slice(1) }}
           </a>
           <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-            <li><a class="dropdown-item" href="{{ route('auth.logout') }}">Logout</a></li>
+            <li>
+              <a class="dropdown-item" href="{{ route('profile.index', { email: auth.user.email }) }}">Profile</a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{{ route('auth.logout') }}">Logout</a>
+            </li>
           </ul>
         </li>
         @else

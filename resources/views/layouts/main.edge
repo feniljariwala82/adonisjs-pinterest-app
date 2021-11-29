@@ -22,6 +22,9 @@
   {{--  toasts  --}}
   @include('partials/toasts')
 
+  {{--  static toasts  --}}
+  @include('partials/staticToasts')
+
   {{--  footer  --}}
   {{--  @include('partials/footer')  --}}
 
@@ -29,8 +32,10 @@
   @!section('scripts')
 
   <script type="module">
-    $('#back').on('click', function () {
-      window.history.back()
+    $(document).ready(function () {
+      $('#back').on('click', function () {
+        window.history.back()
+      })
     })
   </script>
 </body>

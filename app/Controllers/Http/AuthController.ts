@@ -27,7 +27,7 @@ export default class AuthController {
         // fetching user
         let user: User
         try {
-          user = await User.findByOrFail('email', payload.email)
+          user = await User.findByOrFail('email', payload.email.toLocaleLowerCase())
         } catch (error) {
           console.error(error)
           session.flash({ error: 'User not found' })

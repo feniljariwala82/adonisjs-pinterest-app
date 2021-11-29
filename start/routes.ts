@@ -1,6 +1,11 @@
 import Route from '@ioc:Adonis/Core/Route'
 import './testingRoutes'
 
+Route.where(
+  'email',
+  /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+)
+
 // Authentication routes
 Route.group(() => {
   Route.route('/login', ['GET', 'POST'], 'AuthController.login').as('login').middleware('isGuest')
@@ -26,5 +31,8 @@ Route.resource('/post', 'PostsController').middleware({
   destroy: 'auth',
 })
 
-// Route for profile
-Route.resource('/profile', 'ProfilesController').middleware({ '*': ['silentAuth'] })
+Route.group(() => {
+  Route.get('/profile/:email', 'ProfilesController.index').as('index')
+})
+  .middleware(['silentAuth'])
+  .as('profile')

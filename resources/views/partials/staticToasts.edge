@@ -1,0 +1,52 @@
+   {{--  toast content  --}}
+   <div id="staticToasts">
+
+     {{--  Success toast message  --}}
+     <div class="toast align-items-center text-white bg-success border-0 position-fixed bottom-0 end-0 m-3" role="alert"
+       aria-live="assertive" aria-atomic="true" id="successToast" style="z-index: 11;">
+       <div class="d-flex">
+         <div class="toast-body text-light text-capitalize" id="successMessage">
+           {{--  success message  --}}
+         </div>
+         <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close">
+         </button>
+       </div>
+     </div>
+
+     {{--  Warning toast message  --}}
+     <div class="toast align-items-center text-white bg-warning border-0 position-fixed bottom-0 end-0 m-3" role="alert"
+       aria-live="assertive" aria-atomic="true" id="warningToast" style="z-index: 11;">
+       <div class="d-flex">
+         <div class="toast-body text-light text-capitalize" id="warningMessage">
+           {{--  warning message  --}}
+         </div>
+         <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close">
+         </button>
+       </div>
+     </div>
+
+     {{--  error toast  --}}
+     <div class="toast align-items-center text-white bg-danger border-0 position-fixed bottom-0 end-0 m-3"
+       id="errorToast" role="alert" aria-live="assertive" aria-atomic="true" style="z-index: 11;">
+       <div class="d-flex">
+         <div class="toast-body text-capitalize text-light" id="errorMessage">
+           {{--  error message  --}}
+         </div>
+         <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close">
+         </button>
+       </div>
+     </div>
+
+     {{--  Information toast message  --}}
+     <div class="toast align-items-center text-white bg-info border-0 position-fixed bottom-0 end-0 m-3" role="alert"
+       aria-live="assertive" aria-atomic="true" id="infoToast" style="z-index: 11;">
+       <div class="d-flex">
+         <div class="toast-body text-light text-capitalize" id="infoMessage">
+           {{--  info message  --}}
+         </div>
+         <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close">
+         </button>
+       </div>
+     </div>
+
+   </div>

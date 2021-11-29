@@ -11,6 +11,262 @@
     </ol>
   </nav>
 
-  <p>Edit page</p>
+  <div class="row">
+    {{--  preview  --}}
+    <div class="col-12 col-md-6">
+      <h4 class="mb-4 fs-4 fw-bold  text-center">Image Preview</h4>
+
+      <div class="d-flex justify-content-center align-items-start">
+
+        {{--  original image preview  --}}
+        <div class="col-6">
+          <p class="text-center">Old Image</p>
+          <img src="{{ post.image_name }}" class="img-thumbnail" alt="Image" id="oldImage">
+        </div>
+
+        {{--  new image preview  --}}
+        <div class="col-6" id="imgContainer" style="display:none;">
+          <p class="mt-3 text-center">New Image</p>
+          <img src="" class="img-thumbnail" alt="Image" id="upImage">
+        </div>
+      </div>
+    </div>
+
+    {{--  edit data  --}}
+    <div class="col-12 col-md-6">
+
+      <h4 class="mb-4 fs-4 fw-bold text-center">Edit Post</h4>
+
+      <form action="{{ route('post.store') }}" method="POST" id="myForm">
+        {{ csrfField() }}
+
+        <div class="d-flex flex-column justify-content-center align-items-center">
+
+
+          {{--  alert container  --}}
+          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6" id="alertContainer">
+          </div>
+
+          {{--  title  --}}
+          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+            <div class="form-floating mb-3">
+              <input type="text" class="form-control" id="titleInput" name="title" placeholder="create song"
+                value="{{ post.title }}" required>
+              <label for="floatingInput">Post Title</label>
+            </div>
+          </div>
+
+          {{--  description  --}}
+          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+            <div class="form-floating mb-3">
+              <textarea class="form-control" placeholder="Leave a description here" id="descriptionInput"
+                name="description" style="height: 100px" required></textarea>
+              <label for="floatingTextarea2">Post Description</label>
+            </div>
+            <script type="module">
+              $('#descriptionInput').text(JSON.parse('{{{ JSON.stringify(post.description) }}}'))
+            </script>
+          </div>
+
+          {{--  postImage dropdown  --}}
+          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+            <div class="form-floating mb-3">
+              <div class="input-group mb-3">
+                <label class="input-group-text" for="inputGroupFile01">Upload</label>
+                <input type="file" class="form-control" id="postImage" name="postImage"
+                  value="{{ flashMessages.get('postImage', '') }}">
+              </div>
+            </div>
+          </div>
+
+          @set('tags', post.postTags.map((postTags) => postTags.tag))
+          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+            <div class="row align-items-center">
+              {{--  tags  --}}
+              <div class="col-12 col-sm-10">
+                <div class="form-floating">
+                  {{--  input  --}}
+                  <input type="text" class="form-control" id="tagInput" placeholder="create tag">
+                  <label for="floatingInput">Post tag</label>
+                </div>
+              </div>
+
+              {{--  Add button  --}}
+              <div class="col-12 col-sm-2 mt-2 mt-sm-0">
+                <button type="button" class="btn btn-primary" id="addTab">Add</button>
+              </div>
+            </div>
+          </div>
+
+          {{--  tag view  --}}
+          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6 mt-4">
+            <div class="p-4 border rounded" id="tabContainer">
+
+            </div>
+          </div>
+
+          {{--  buttons  --}}
+          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6 mt-4">
+            <button class="btn btn-primary" id="submit">Create Post</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
+
+<script type="module">
+  $(document).ready(function () {
+
+    let postTags = JSON.parse('{{{ JSON.stringify(tags) }}}')
+
+    let index = 0
+    let formTags = []
+
+    // displaying tags
+    for (const tag of postTags) {
+      let i = ++index
+      $('#tabContainer').append(
+        `<span class="badge rounded-pill bg-secondary text-capitalize mt-1 ms-1 p-2" id=${i} style="cursor:pointer;">
+      </span>`
+      )
+
+      // adding already existed tags to formTags array
+      formTags.push(tag.title)
+
+      // assigning value to the badge
+      $('#' + i).text(tag.title)
+
+      // close button
+      $('#' + i).on('click', function () {
+        // removing from the tabs array
+        var index = formTags.indexOf($('#' + i).text())
+        if (index !== -1) {
+          formTags.splice(index, 1)
+        }
+
+        // fading tag
+        $('#' + i).addClass('fade').remove()
+      })
+    }
+
+    const showErrorAlert = (message) => {
+      $('#alertContainer')
+        .append('<div class="alert alert-dismissible fade show text-capitalize" role="alert" id="alert"></div>')
+      $('#alert')
+        .append(`<strong>Error </strong>${message}`)
+        .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button> ')
+        .addClass('alert-danger')
+    }
+
+    $('#closeBtn').on('click', function () {
+      $('#btn').addClass('fade')
+    })
+
+    $('#addTab').on('click', function (e) {
+      e.preventDefault()
+
+      // adding new tag into array
+      let res = /^[a-zA-Z ]+$/.test($('#tagInput').val());
+      if (res) {
+        formTags.push($('#tagInput').val())
+      } else {
+        // appending error alert
+        showErrorAlert('Tags can contain alphabets with no space only')
+        return
+      }
+
+      let i = ++index
+      $('#tabContainer').append(
+        `<span class="badge rounded-pill bg-secondary text-capitalize mt-1 ms-1 p-2" id=${i} style="cursor:pointer;"> </span>`
+      )
+
+      // assigning value to the badge
+      $('#' + i).text($('#tagInput').val())
+
+      // close button
+      $('#' + i).on('click', function () {
+        // removing from the tabs array
+        var index = formTags.indexOf($('#' + i).text())
+        if (index !== -1) {
+          formTags.splice(index, 1)
+        }
+
+        // fading tag
+        $('#' + i).addClass('fade').remove()
+      })
+
+      // resetting input text null
+      $('#tagInput').val('')
+    })
+
+    // let file
+    $('input[type="file"]').change(function (e) {
+      console.log('changed')
+      var fileName = e.target.files[0].name;
+
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        // get loaded data and render thumbnail.
+        $("#imgContainer").css('display', 'block');
+        $("#upImage").attr('src', e.target.result);
+      };
+      // read the image file as a data URL.
+      file = this.files[0]
+      reader.readAsDataURL(this.files[0]);
+    });
+
+    let formData;
+    formData = new FormData()
+
+    // on image change adding image to the file object, that we can use in form data
+    let file
+    $('#postImage').on('change', function (event) {
+      event.preventDefault()
+      file = this.files[0]
+    })
+
+    /**
+     * submit form using ajax
+     */
+    $('#submit').on('click', function (event) {
+      event.preventDefault()
+      var that = this;
+
+      formData.append('title', $('#titleInput').val())
+      formData.append('description', $('#descriptionInput').val())
+      formData.append('postImage', file)
+      // formData.append('_csrf', $("input[name=_csrf]").val())
+      for (var i = 0; i < formTags.length; i++) {
+        formData.append('tags[]', formTags[i]);
+      }
+
+      // sending the request
+      $.ajax({
+          url: "{{ route('post.store') }}",
+          method: 'POST',
+          data: formData,
+          cache: false,
+          contentType: false,
+          processData: false,
+          timeout: 60000,
+          headers: {
+            'X-XSRF-TOKEN': helper.getCookie('XSRF-TOKEN'),
+          },
+        })
+        .done((success) => {
+          console.log('Success')
+          window.location.href = "{{ route('post.index') }}"
+        })
+        .fail((error) => {
+          /**
+           * On error resetting form data for data duplication, 
+           */
+          formData = new FormData()
+          toast.error(error.responseText)
+        })
+    })
+  })
+
+</script>
 @endsection

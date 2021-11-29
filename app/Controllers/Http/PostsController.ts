@@ -1,13 +1,17 @@
-import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import Post from 'App/Models/Post'
-import CreatePostValidator from 'App/Validators/CreatePostValidator'
 import Application from '@ioc:Adonis/Core/Application'
 import { cuid } from '@ioc:Adonis/Core/Helpers'
-import Tag from 'App/Models/Tag'
-import PostTag from 'App/Models/PostTag'
-import Drive from '@ioc:Adonis/Core/Drive'
+import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import Post from 'App/Models/Post'
+import ErrorService from 'App/Services/ErrorService'
+import StorePostValidator from 'App/Validators/StorePostValidator'
 import fs from 'fs'
-import path from 'path'
+
+// type PostStoreType = {
+//   title: string
+//   description: string
+//   postImage: any
+//   tags: string[]
+// }
 
 export default class PostsController {
   /**
@@ -40,10 +44,16 @@ export default class PostsController {
    * @description to save new post
    */
   public async store({ request, session, response, auth }: HttpContextContract) {
-    console.log(request.all())
-
     // validate data
-    let payload = await request.validate(CreatePostValidator)
+    let payload: any
+    try {
+      payload = await request.validate(StorePostValidator)
+    } catch (error) {
+      console.log(error.messages.errors)
+      // errors made by form validator
+      let errorMessages = ErrorService.filterMessages(error)
+      return response.status(400).json(errorMessages ? errorMessages : error)
+    }
 
     // moving file to the uploads folder
     await payload.postImage.move(Application.tmpPath('uploads'), {
@@ -53,36 +63,16 @@ export default class PostsController {
     let imgName = payload.postImage.fileName
 
     // creating a post
-    let post: Post
+    let result: string = ''
     try {
-      post = await Post.store(payload, imgName!, auth.user!.id)
+      result = await Post.store(payload, imgName!, auth.user!.id)
     } catch (error) {
       console.error(error)
       session.flash({ error })
       return response.redirect().back()
     }
 
-    // creating tags
-    let tagIds: Array<number>
-    try {
-      // Non-null assertion operator
-      tagIds = await Tag.store(payload.tags!)
-    } catch (error) {
-      console.error(error)
-      session.flash({ error })
-      return response.redirect().back()
-    }
-
-    // create relationships
-    try {
-      await PostTag.store(post.id, tagIds)
-    } catch (error) {
-      console.error(error)
-      session.flash({ error })
-      return response.redirect().back()
-    }
-
-    session.flash({ success: 'post created' })
+    session.flash({ success: result })
     return response.redirect().toRoute('post.index')
   }
 
@@ -121,6 +111,9 @@ export default class PostsController {
         return response.redirect().back()
       }
 
+      let tags = post.postTags.map((postTags) => postTags.tag)
+      console.log(tags)
+
       return view.render('post/edit', { post })
     } catch (error) {
       console.error(error)
@@ -135,21 +128,45 @@ export default class PostsController {
   public async update({ params, session, response, request, bouncer }: HttpContextContract) {
     let { id } = params
 
-    // validating data
-    let payload = await request.validate(CreatePostValidator)
+    // validate data
+    let payload = await request.validate(StorePostValidator)
 
-    // moving file to the uploads folder
-    await payload.postImage.move(Application.tmpPath('uploads'))
-    let imgName = payload.postImage.fileName
+    // checking post available or not
+    let post: Post
+    try {
+      post = await Post.findOrFail(id)
+    } catch (error) {
+      session.flash({ error: 'Post not found' })
+      return response.redirect().back()
+    }
 
     // checking authorization
-    let post = await Post.getPostById(id)
     try {
       await bouncer.with('PostPolicy').authorize('update', post)
     } catch (error) {
       session.flash({ error: 'Not authorized to perform this action' })
       return response.redirect().back()
     }
+
+    /**
+     * Removing old image
+     */
+    fs.unlink(Application.tmpPath(post.image_name), (error) => {
+      if (error) {
+        console.error(error)
+        session.flash({ error: error.message })
+        return response.redirect().back()
+      }
+    })
+
+    /**
+     * adding new image file to the uploads folder
+     */
+    await payload.postImage.move(Application.tmpPath('uploads'), {
+      // renaming the file
+      name: cuid() + '.' + payload.postImage.extname,
+    })
+    let imgName = payload.postImage.fileName
 
     // updating post data
     try {
