@@ -25,7 +25,7 @@
         </div>
 
         {{--  new image preview  --}}
-        <div class="col-6" id="imgContainer" style="display:none;">
+        <div class="col-6 ms-2" id="imgContainer" style="display:none;">
           <p class="mt-3 text-center">New Image</p>
           <img src="" class="img-thumbnail" alt="Image" id="upImage">
         </div>
@@ -35,7 +35,7 @@
     {{--  edit data  --}}
     <div class="col-12 col-md-6">
 
-      <h4 class="mb-4 fs-4 fw-bold text-center">Edit Post</h4>
+      <h4 class="mb-4 fs-4 fw-bold text-center mt-3 mt-sm-0">Edit Post</h4>
 
       <form action="{{ route('post.store') }}" method="POST" id="myForm">
         {{ csrfField() }}
@@ -107,7 +107,7 @@
 
           {{--  buttons  --}}
           <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6 mt-4">
-            <button class="btn btn-primary" id="submit">Create Post</button>
+            <button class="btn btn-primary" id="submit">Update Post</button>
           </div>
         </div>
       </form>
@@ -218,12 +218,15 @@
 
     let formData;
     formData = new FormData()
+    // default value of new image to false, making update image field optional
+    formData.append('newImage', false)
 
     // on image change adding image to the file object, that we can use in form data
     let file
     $('#postImage').on('change', function (event) {
       event.preventDefault()
       file = this.files[0]
+      formData.append('newImage', true)
     })
 
     /**
@@ -235,7 +238,9 @@
 
       formData.append('title', $('#titleInput').val())
       formData.append('description', $('#descriptionInput').val())
-      formData.append('postImage', file)
+      if (formData.get('newImage') === true) {
+        formData.append('postImage', file)
+      }
       // formData.append('_csrf', $("input[name=_csrf]").val())
       for (var i = 0; i < formTags.length; i++) {
         formData.append('tags[]', formTags[i]);
@@ -243,8 +248,8 @@
 
       // sending the request
       $.ajax({
-          url: "{{ route('post.store') }}",
-          method: 'POST',
+          url: "{{ route('post.update', {id: post.id }) }}",
+          method: 'PUT',
           data: formData,
           cache: false,
           contentType: false,
@@ -259,6 +264,7 @@
           window.location.href = "{{ route('post.index') }}"
         })
         .fail((error) => {
+          console.log(error)
           /**
            * On error resetting form data for data duplication, 
            */

@@ -33,7 +33,7 @@
     </button>
 
     @if(auth.user && auth.user.id === user.id)
-    <button type="button" class="btn btn-secondary mt-2">
+    <button type="button" class="btn btn-secondary mt-2" id="editProfile">
       <i class="fas fa-user-edit"></i>
       Edit Profile
     </button>
@@ -58,26 +58,6 @@
       </div>
     </div>
   </div>
-  <script type="module">
-    function copyToClipboard() {
-      var inputc = document.body.appendChild(document.createElement("input"));
-      inputc.value = window.location.href;
-      inputc.focus();
-      inputc.select();
-      document.execCommand('copy');
-      inputc.parentNode.removeChild(inputc);
-
-    }
-
-    $('#shareBtn').on('click', function () {
-      copyToClipboard()
-      var modal = new Modal($('#staticBackdrop'), {
-        keyboard: true,
-      })
-
-      modal.toggle()
-    })
-  </script>
 
   {{--  Showing all the posts by the user  --}}
   <div class="row mt-4 justify-content-center align-items-center" data-masonry='{"percentPosition": true }'>
@@ -100,7 +80,29 @@
   </div>
 </div>
 
-<script type="text/javascript">
+<script type="module">
+  function copyToClipboard() {
+    var inputc = document.body.appendChild(document.createElement("input"));
+    inputc.value = window.location.href;
+    inputc.focus();
+    inputc.select();
+    document.execCommand('copy');
+    inputc.parentNode.removeChild(inputc);
+
+  }
+
+  $('#shareBtn').on('click', function () {
+    copyToClipboard()
+    var modal = new Modal($('#staticBackdrop'), {
+      keyboard: true,
+    })
+
+    modal.toggle()
+  })
+
+  $('#editProfile').on('click', function () {
+    window.location.href = "{{ route('profile.edit', {id: user.id}) }}"
+  })
 
 </script>
 @endsection

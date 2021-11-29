@@ -1,7 +1,16 @@
-import { DateTime } from 'luxon'
 import Hash from '@ioc:Adonis/Core/Hash'
-import { column, beforeSave, BaseModel, hasMany, HasMany } from '@ioc:Adonis/Lucid/Orm'
+import {
+  BaseModel,
+  beforeSave,
+  column,
+  hasMany,
+  HasMany,
+  hasOne,
+  HasOne,
+} from '@ioc:Adonis/Lucid/Orm'
 import Post from 'App/Models/Post'
+import Profile from 'App/Models/Profile'
+import { DateTime } from 'luxon'
 
 type CreateUser = {
   firstName: string
@@ -15,16 +24,7 @@ export default class User extends BaseModel {
   public id: number
 
   @column()
-  public first_name: string
-
-  @column()
-  public last_name: string
-
-  @column()
   public email: string
-
-  @column()
-  public profile_image: string
 
   @column({ serializeAs: null })
   public password: string
@@ -45,11 +45,15 @@ export default class User extends BaseModel {
     }
   }
 
-  // relationships
+  // user has many posts
   @hasMany(() => Post, {
     foreignKey: 'user_id', // defaults to userId
   })
   public posts: HasMany<typeof Post>
+
+  // user has one profile
+  @hasOne(() => Profile, { foreignKey: 'user_id' })
+  public profile: HasOne<typeof Profile>
 
   /**
    * @description Get all user's post
@@ -82,17 +86,28 @@ export default class User extends BaseModel {
     }
 
     // creating user
+    let createdUser: User
     try {
-      await this.create({
-        first_name: user.firstName.toLocaleLowerCase(),
-        last_name: user.lastName.toLocaleLowerCase(),
-        email: user.email.toLocaleLowerCase(),
-        password: user.password,
+      createdUser = await this.create({
+        email: user.email.toLocaleLowerCase().trim(),
+        password: user.password.trim(),
+      })
+    } catch (error) {
+      console.error(error)
+      return Promise.reject(error.message)
+    }
+
+    // creating profile
+    try {
+      await Profile.store({
+        firstName: user.firstName.trim(),
+        lastName: user.lastName.trim(),
+        userId: createdUser.id,
       })
       return Promise.resolve('User created')
     } catch (error) {
       console.error(error)
-      return Promise.reject(error.message)
+      return Promise.reject(error)
     }
   }
 }

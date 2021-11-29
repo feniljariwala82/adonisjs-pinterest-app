@@ -17,4 +17,36 @@ export default class ProfilesController {
       return response.redirect().back()
     }
   }
+
+  /**
+   * @description open edit profile form
+   */
+  public async edit({ session, response, view, params }: HttpContextContract) {
+    let { id } = params
+
+    try {
+      let user = await Post.getAllByUser(id)
+      return view.render('profile/edit', { user })
+    } catch (error) {
+      console.error(error)
+      session.flash({ error })
+      return response.redirect().back()
+    }
+  }
+
+  /**
+   * @description update profile form
+   */
+  public async update({ session, response, view, params }: HttpContextContract) {
+    let { id } = params
+
+    try {
+      let user = await Post.getAllByUser(id)
+      // return view.render('profile/index', { user })
+    } catch (error) {
+      console.error(error)
+      session.flash({ error })
+      return response.redirect().back()
+    }
+  }
 }

@@ -4,6 +4,7 @@ import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Post from 'App/Models/Post'
 import ErrorService from 'App/Services/ErrorService'
 import StorePostValidator from 'App/Validators/StorePostValidator'
+import UpdatePostValidator from 'App/Validators/UpdatePostValidator'
 import fs from 'fs'
 
 // type PostStoreType = {
@@ -111,9 +112,6 @@ export default class PostsController {
         return response.redirect().back()
       }
 
-      let tags = post.postTags.map((postTags) => postTags.tag)
-      console.log(tags)
-
       return view.render('post/edit', { post })
     } catch (error) {
       console.error(error)
@@ -125,27 +123,36 @@ export default class PostsController {
   /**
    * @description update particular post
    */
-  public async update({ params, session, response, request, bouncer }: HttpContextContract) {
+  public async update({ params, response, request, bouncer }: HttpContextContract) {
+    console.log(request.all())
     let { id } = params
 
     // validate data
-    let payload = await request.validate(StorePostValidator)
+    let payload: any
+    try {
+      payload = await request.validate(UpdatePostValidator)
+    } catch (error) {
+      console.log(error.messages.errors)
+      // errors made by form validator
+      let errorMessages = ErrorService.filterMessages(error)
+      return response.status(400).json(errorMessages ? errorMessages : error)
+    }
 
     // checking post available or not
     let post: Post
     try {
       post = await Post.findOrFail(id)
     } catch (error) {
-      session.flash({ error: 'Post not found' })
-      return response.redirect().back()
+      console.error(error)
+      return response.status(400).json('Post not found')
     }
 
     // checking authorization
     try {
       await bouncer.with('PostPolicy').authorize('update', post)
     } catch (error) {
-      session.flash({ error: 'Not authorized to perform this action' })
-      return response.redirect().back()
+      console.error(error)
+      return response.status(400).json('Not authorized to perform this action')
     }
 
     /**
@@ -154,29 +161,29 @@ export default class PostsController {
     fs.unlink(Application.tmpPath(post.image_name), (error) => {
       if (error) {
         console.error(error)
-        session.flash({ error: error.message })
-        return response.redirect().back()
+        return response.status(400).json(error.message)
       }
     })
 
     /**
      * adding new image file to the uploads folder
      */
-    await payload.postImage.move(Application.tmpPath('uploads'), {
-      // renaming the file
-      name: cuid() + '.' + payload.postImage.extname,
-    })
-    let imgName = payload.postImage.fileName
+    let imgName: string | undefined
+    if (payload.newImage) {
+      await payload.postImage.move(Application.tmpPath('uploads'), {
+        // renaming the file
+        name: cuid() + '.' + payload.postImage.extname,
+      })
+      imgName = payload.postImage.fileName
+    }
 
     // updating post data
     try {
-      let result = await Post.update(id, payload, imgName!)
-      session.flash({ success: result })
-      return response.redirect().toRoute('post.index')
+      let result = await Post.update(id, payload, imgName)
+      return response.status(200).json(result)
     } catch (error) {
       console.error(error)
-      session.flash({ error })
-      return response.redirect().back()
+      return response.status(400).json(error)
     }
   }
 

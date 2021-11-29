@@ -217,7 +217,7 @@ export default class Post extends BaseModel {
    * @param data data to be updated
    * @returns Promise
    */
-  public static async update(id: number, data: PostType, imageName: string) {
+  public static async update(id: number, data: PostType, imageName?: string) {
     // preloading post data
     let post: Post | null
     try {
@@ -239,7 +239,11 @@ export default class Post extends BaseModel {
     // updating post data
     post.title = data.title.toLocaleLowerCase()
     post.description = data.description.toLocaleLowerCase()
-    post.image_name = imageName
+
+    // if image name exists then saving new image name
+    if (imageName) {
+      post.image_name = imageName
+    }
     try {
       await post.save()
     } catch (error) {

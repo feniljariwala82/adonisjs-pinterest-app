@@ -11,84 +11,95 @@
     </ol>
   </nav>
 
-  {{--  <img src="" id="preview" class="img-thumbnail" alt="Preview image">  --}}
-  <form action="{{ route('post.store') }}" method="POST" id="myForm">
-    {{ csrfField() }}
+  <div class="row">
+    <div class="col-12 col-md-6">
+      <h4 class="mb-4 fs-4 fw-bold  text-center">Image Preview</h4>
 
-    <div class="d-flex flex-column justify-content-center align-items-center">
-      <div class="col align-items-start">
-        <h4 class="mb-4 fs-4 fw-bold">Create Post</h4>
+      {{-- image preview  --}}
+      <div class="col-12">
+        <img src="" class="img-thumbnail" alt="Image" id="upImage" style="display:none;">
+        <p class="fs-4 text-capitalize text-center" id="imgMessage">Image not selected!</p>
       </div>
 
-      {{--  alert container  --}}
-      <div class="col-12 col-sm-8 col-md-5" id="alertContainer">
+    </div>
+    <div class="col-12 col-md-6">
+      <form action="{{ route('post.store') }}" method="POST" id="myForm">
+        {{ csrfField() }}
 
-      </div>
-
-      <div class="col-12 col-sm-8 col-md-5" id="imgContainer" style="display:none;">
-        <img src="" class="img-thumbnail" alt="Image" id="upImage">
-      </div>
-
-      {{--  title  --}}
-      <div class="col-12 col-sm-8 col-md-5">
-        <div class="form-floating mb-3">
-          <input type="text" class="form-control" id="titleInput" name="title" placeholder="create song"
-            value="{{ flashMessages.get('title', '') }}" required>
-          <label for="floatingInput">Post Title</label>
-        </div>
-      </div>
-
-      {{--  description  --}}
-      <div class="col-12 col-sm-8 col-md-5">
-        <div class="form-floating mb-3">
-          <textarea class="form-control" placeholder="Leave a description here" id="descriptionInput" name="description"
-            value="{{ flashMessages.get('description', '') }}" style="height: 100px" required></textarea>
-          <label for="floatingTextarea2">Post Description</label>
-        </div>
-      </div>
-
-      {{--  postImage dropdown  --}}
-      <div class="col-12 col-sm-8 col-md-5">
-        <div class="form-floating mb-3">
-          <div class="input-group mb-3">
-            <label class="input-group-text" for="inputGroupFile01">Upload</label>
-            <input type="file" class="form-control" id="postImage" name="postImage"
-              value="{{ flashMessages.get('postImage', '') }}">
+        <div class="d-flex flex-column justify-content-center align-items-center">
+          <div class="col align-items-start">
+            <h4 class="mb-4 fs-4 fw-bold">Create Post</h4>
           </div>
-        </div>
-      </div>
 
-      <div class="col-12 col-sm-8 col-md-5">
-        <div class="row align-items-center">
-          {{--  tags  --}}
-          <div class="col-12 col-sm-10">
-            <div class="form-floating">
-              {{--  input  --}}
-              <input type="text" class="form-control" id="tagInput" placeholder="create tag">
-              <label for="floatingInput">Post tag</label>
+          {{--  alert container  --}}
+          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6" id="alertContainer">
+            {{--  alert will be appended here  --}}
+          </div>
+
+          {{--  title  --}}
+          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+            <div class="form-floating mb-3">
+              <input type="text" class="form-control" id="titleInput" name="title" placeholder="create song"
+                value="{{ flashMessages.get('title', '') }}" required>
+              <label for="floatingInput">Post Title</label>
             </div>
           </div>
 
-          {{--  Add button  --}}
-          <div class="col-12 col-sm-2 mt-2 mt-sm-0">
-            <button type="button" class="btn btn-primary" id="addTab">Add</button>
+          {{--  description  --}}
+          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+            <div class="form-floating mb-3">
+              <textarea class="form-control" placeholder="Leave a description here" id="descriptionInput"
+                name="description" value="{{ flashMessages.get('description', '') }}" style="height: 100px"
+                required></textarea>
+              <label for="floatingTextarea2">Post Description</label>
+            </div>
+          </div>
+
+          {{--  postImage dropdown  --}}
+          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+            <div class="form-floating mb-3">
+              <div class="input-group mb-3">
+                <label class="input-group-text" for="inputGroupFile01">Upload</label>
+                <input type="file" class="form-control" id="postImage" name="postImage"
+                  value="{{ flashMessages.get('postImage', '') }}">
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+            <div class="row align-items-center">
+              {{--  tags  --}}
+              <div class="col-12 col-sm-10">
+                <div class="form-floating">
+                  {{--  input  --}}
+                  <input type="text" class="form-control" id="tagInput" placeholder="create tag">
+                  <label for="floatingInput">Post tag</label>
+                </div>
+              </div>
+
+              {{--  Add button  --}}
+              <div class="col-12 col-sm-2 mt-2 mt-sm-0">
+                <button type="button" class="btn btn-primary" id="addTab">Add</button>
+              </div>
+            </div>
+          </div>
+
+          {{--  tag view  --}}
+          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6 mt-4">
+            <div class="p-4 border rounded" id="tabContainer">
+
+            </div>
+          </div>
+
+          {{--  buttons  --}}
+          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6 mt-4">
+            <button class="btn btn-primary" id="submit">Create Post</button>
           </div>
         </div>
-      </div>
-
-      {{--  tag view  --}}
-      <div class="col-12 col-sm-8 col-md-5 mt-4">
-        <div class="p-4 border rounded" id="tabContainer">
-
-        </div>
-      </div>
-
-      {{--  buttons  --}}
-      <div class="col-12 col-sm-8 col-md-5 mt-4">
-        <button class="btn btn-primary" id="submit">Create Post</button>
-      </div>
+      </form>
     </div>
-  </form>
+  </div>
+
 </div>
 
 <script type="module">
@@ -154,8 +165,11 @@
       var reader = new FileReader();
       reader.onload = function (e) {
         // get loaded data and render thumbnail.
-        $("#imgContainer").css('display', 'block');
-        $("#upImage").attr('src', e.target.result);
+        $("#imgContainer").css('display', 'block')
+        $("#upImage")
+          .css('display', 'block')
+          .attr('src', e.target.result)
+        $('#imgMessage').css('display', 'none')
       };
       // read the image file as a data URL.
       file = this.files[0]
@@ -174,7 +188,7 @@
 
     /**
      * submit form using ajax
-    */
+     */
     $('#submit').on('click', function (event) {
       event.preventDefault()
       var that = this;
@@ -186,7 +200,7 @@
       for (var i = 0; i < tags.length; i++) {
         formData.append('tags[]', tags[i]);
       }
-      
+
       // sending the request
       $.ajax({
           url: "{{ route('post.store') }}",
@@ -207,7 +221,7 @@
         .fail((error) => {
           /**
            * On error resetting form data for data duplication, 
-          */
+           */
           formData = new FormData()
           toast.error(error.responseText)
         })
