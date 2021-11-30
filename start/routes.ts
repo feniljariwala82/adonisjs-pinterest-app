@@ -32,9 +32,7 @@ Route.resource('/post', 'PostsController').middleware({
 })
 
 Route.group(() => {
-  Route.get('/profile/:email', 'ProfilesController.index').as('index')
-  Route.get('/profile/:id/edit', 'ProfilesController.edit').as('edit')
-  Route.put('/profile/:id', 'ProfilesController.update').as('update')
-})
-  .middleware(['silentAuth'])
-  .as('profile')
+  Route.get('/profile/:email', 'ProfilesController.index').as('index').middleware(['silentAuth'])
+  Route.get('/profile/:id/edit', 'ProfilesController.edit').as('edit').middleware(['auth'])
+  Route.put('/profile/:id', 'ProfilesController.update').as('update').middleware(['auth'])
+}).as('profile')

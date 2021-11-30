@@ -15,24 +15,30 @@
     </ol>
   </nav>
 
+  {{--  ROW  --}}
   <div class="row">
+
+    {{--  image preview column  --}}
     <div class="col-12 col-md-6">
-      <h4 class="mb-4 fs-4 fw-bold  text-center">Profile Image Preview</h4>
+      <h4 class="mb-4 fs-4 fw-bold text-center">Profile Image Preview</h4>
 
       {{-- image preview  --}}
       <div class="col-12">
         <img src="" class="img-thumbnail" alt="Image" id="upImage" style="display:none;">
         <p class="fs-4 text-capitalize text-center" id="imgMessage">Image not selected!</p>
       </div>
-
     </div>
-    <div class="col-12 col-md-6">
-      <form action="{{ route('profile.update', {id: user.id }) }}" method="POST" id="myForm">
+
+    {{--  form column  --}}
+    <div class="col-12 col-md-6 mt-4 mt-sm-0">
+      <form action="{{ route('profile.update', {id: auth.user.id }, { qs: {
+        _method:'PUT'
+      }}) }}" method="POST" id="myForm">
         {{ csrfField() }}
 
         <div class="d-flex flex-column justify-content-center align-items-center">
           <div class="col align-items-start">
-            <h4 class="mb-4 fs-4 fw-bold">Create Post</h4>
+            <h4 class="mb-4 fs-4 fw-bold">Edit Profile</h4>
           </div>
 
           {{--  alert container  --}}
@@ -40,71 +46,127 @@
             {{--  alert will be appended here  --}}
           </div>
 
-          {{--  title  --}}
+          {{--  first name  --}}
           <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
             <div class="form-floating mb-3">
-              <input type="text" class="form-control" id="titleInput" name="title" placeholder="create song"
-                value="{{ flashMessages.get('title', '') }}" required>
-              <label for="floatingInput">Post Title</label>
+              <input type="text" class="form-control" id="firstName" name="firstName" placeholder="enter first name"
+                required>
+              <label for="floatingInput">First Name</label>
             </div>
           </div>
 
-          {{--  description  --}}
+          {{--  last name  --}}
           <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
             <div class="form-floating mb-3">
-              <textarea class="form-control" placeholder="Leave a description here" id="descriptionInput"
-                name="description" value="{{ flashMessages.get('description', '') }}" style="height: 100px"
-                required></textarea>
-              <label for="floatingTextarea2">Post Description</label>
+              <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Dou" required>
+              <label for="floatingInput">Last Name</label>
             </div>
           </div>
 
-          {{--  postImage dropdown  --}}
+          {{--  profile image  --}}
           <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
             <div class="form-floating mb-3">
               <div class="input-group mb-3">
-                <label class="input-group-text" for="inputGroupFile01">Upload</label>
-                <input type="file" class="form-control" id="postImage" name="postImage"
-                  value="{{ flashMessages.get('postImage', '') }}">
+                <label class="input-group-text" for="inputGroupFile01">Profile Image</label>
+                <input type="file" class="form-control" id="postImage" name="postImage">
               </div>
             </div>
           </div>
 
+          {{--  email  --}}
           <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
-            <div class="row align-items-center">
-              {{--  tags  --}}
-              <div class="col-12 col-sm-10">
-                <div class="form-floating">
-                  {{--  input  --}}
-                  <input type="text" class="form-control" id="tagInput" placeholder="create tag">
-                  <label for="floatingInput">Post tag</label>
-                </div>
-              </div>
-
-              {{--  Add button  --}}
-              <div class="col-12 col-sm-2 mt-2 mt-sm-0">
-                <button type="button" class="btn btn-primary" id="addTab">Add</button>
-              </div>
+            <div class="form-floating mb-3">
+              <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" required>
+              <label for="floatingInput">Email address</label>
             </div>
           </div>
 
-          {{--  tag view  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6 mt-4">
-            <div class="p-4 border rounded" id="tabContainer">
-
+          {{--  password  --}}
+          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+            <div class="form-floating mb-3">
+              <input type="password" class="form-control" id="passwordInput" name="password" placeholder="Password"
+                required>
+              <label for="floatingPassword">Password</label>
             </div>
           </div>
 
           {{--  buttons  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6 mt-4">
-            <button class="btn btn-primary" id="submit">Create Post</button>
+          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6 mt-2">
+            <button class="btn btn-primary" id="submit">Update Profile</button>
           </div>
         </div>
       </form>
     </div>
   </div>
-
 </div>
 
+<script>
+  $(document).ready(function () {
+    // let file
+    $('input[type="file"]').change(function (e) {
+      var fileName = e.target.files[0].name;
 
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        // get loaded data and render thumbnail.
+        $("#upImage")
+          .css('display', 'block')
+          .attr('src', e.target.result)
+        $('#imgMessage').css('display', 'none')
+      };
+      // read the image file as a data URL.
+      file = this.files[0]
+      reader.readAsDataURL(this.files[0]);
+    });
+
+    let formData;
+    formData = new FormData()
+
+    // on image change adding image to the file object, that we can use in form data
+    let file
+    $('#postImage').on('change', function (event) {
+      event.preventDefault()
+      file = this.files[0]
+    })
+
+    /**
+     * submit form using ajax
+     */
+    $('#submit').on('click', function (event) {
+      event.preventDefault()
+      var that = this;
+
+      formData.append('firstName', $('#firstName').val())
+      formData.append('lastName', $('#lastName').val())
+      formData.append('postImage', file)
+      formData.append('email', $('#email').val())
+      formData.append('password', $('#password').val())
+
+
+      $.ajax({
+          url: "{{ route('profile.update', {id: auth.user.id }, { qs: { _method:'PUT' }}) }}",
+          method: 'POST',
+          data: formData,
+          cache: false,
+          contentType: false,
+          processData: false,
+          timeout: 60000,
+          headers: {
+            'X-XSRF-TOKEN': helper.getCookie('XSRF-TOKEN'),
+          },
+        }).done((success) => {
+          console.log('Success')
+          window.location.href = "{{ route('auth.logout') }}"
+        })
+        .fail((error) => {
+          /**
+           * On error resetting form data for stopping data duplication,
+           */
+          formData = new FormData()
+          toast.error(error.responseText)
+        })
+    })
+  })
+
+</script>
 @endsection

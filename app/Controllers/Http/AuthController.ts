@@ -27,7 +27,7 @@ export default class AuthController {
         // fetching user
         let user: User
         try {
-          user = await User.findByOrFail('email', payload.email.toLocaleLowerCase())
+          user = await User.findByOrFail('email', payload.email.toLocaleLowerCase().trim())
         } catch (error) {
           console.error(error)
           session.flash({ error: 'User not found' })
@@ -76,6 +76,7 @@ export default class AuthController {
             'required': 'The {{ field }} is required',
             'firstName.alpha': 'The first name must contain alphabets only',
             'lastName.alpha': 'The last name must contain alphabets only',
+            'email.email': 'Please provide valid email',
             'password.minLength': 'Password must be 8 characters long',
           },
         })
@@ -99,8 +100,13 @@ export default class AuthController {
    * Logout method
    */
   public async logout({ auth, session, response }: HttpContextContract) {
-    await auth.use('web').logout()
-    session.flash({ success: 'Logged out' })
-    return response.redirect().toRoute('home')
+    try {
+      await auth.use('web').logout()
+      session.flash({ success: 'Logged out' })
+      return response.redirect().toRoute('home')
+    } catch (error) {
+      session.flash({ error })
+      return response.redirect().back()
+    }
   }
 }

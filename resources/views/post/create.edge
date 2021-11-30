@@ -60,8 +60,7 @@
             <div class="form-floating mb-3">
               <div class="input-group mb-3">
                 <label class="input-group-text" for="inputGroupFile01">Upload</label>
-                <input type="file" class="form-control" id="postImage" name="postImage"
-                  value="{{ flashMessages.get('postImage', '') }}">
+                <input type="file" class="form-control" id="postImage" name="postImage">
               </div>
             </div>
           </div>
@@ -165,7 +164,6 @@
       var reader = new FileReader();
       reader.onload = function (e) {
         // get loaded data and render thumbnail.
-        $("#imgContainer").css('display', 'block')
         $("#upImage")
           .css('display', 'block')
           .attr('src', e.target.result)

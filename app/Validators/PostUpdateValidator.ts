@@ -1,7 +1,7 @@
 import { schema, rules, validator } from '@ioc:Adonis/Core/Validator'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
-export default class CreatePostValidator {
+export default class UpdatePostValidator {
   constructor(protected ctx: HttpContextContract) {}
 
   public reporter = validator.reporters.api
@@ -9,7 +9,7 @@ export default class CreatePostValidator {
   public schema = schema.create({
     title: schema.string({ trim: true }, [rules.required(), rules.maxLength(50)]),
     description: schema.string({ trim: true }, [rules.required(), rules.maxLength(400)]),
-    postImage: schema.file({
+    postImage: schema.file.optional({
       size: '2mb',
       extnames: ['jpg', 'png'],
     }),
@@ -25,5 +25,6 @@ export default class CreatePostValidator {
     'postImage.extnames': 'Image should be jpg or png only',
     'tags.minLength': 'At least one tag should be entered',
     'tags.alpha': 'Tags can contain alphabets only',
+    'newImage.boolean': 'New image flag can be boolean only',
   }
 }

@@ -1,18 +1,17 @@
-import { DateTime } from 'luxon'
 import {
   BaseModel,
-  column,
+  beforeSave,
   BelongsTo,
   belongsTo,
+  column,
   hasMany,
   HasMany,
-  afterFetch,
-  afterFind,
 } from '@ioc:Adonis/Lucid/Orm'
-import User from 'App/Models/User'
 import PostTag from 'App/Models/PostTag'
-import Drive from '@ioc:Adonis/Core/Drive'
 import Tag from 'App/Models/Tag'
+import User from 'App/Models/User'
+import { DateTime } from 'luxon'
+import path from 'path'
 
 type PostType = {
   title: string
@@ -35,7 +34,7 @@ export default class Post extends BaseModel {
   public user_id: number
 
   @column()
-  public image_name: string
+  public image_url: string
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
@@ -56,20 +55,14 @@ export default class Post extends BaseModel {
   })
   public postTags: HasMany<typeof PostTag>
 
-  // when single file is fetched
-  @afterFind()
-  public static async afterFind(post) {
-    console.log('after find')
-    post.image_name = await Drive.getUrl(post.image_name)
-  }
-
-  // when multiple file is fetched
-  @afterFetch()
-  public static async afterFetch(posts: Post[]) {
-    console.log('after fetch')
-    for (const post of posts) {
-      // post.image_name = await Drive.getUrl(Application.tmpPath('uploads/'))
-      post.image_name = await Drive.getUrl(post.image_name)
+  @beforeSave()
+  public static async beforeSave(post: Post) {
+    // which means the data is updated but not image
+    if (post.image_url.includes('uploads')) {
+      post.image_url
+    } else {
+      // else the image is new
+      post.image_url = path.join('/uploads/', post.image_url)
     }
   }
 
@@ -85,7 +78,6 @@ export default class Post extends BaseModel {
           postTagQuery.preload('tag')
         })
         .orderBy('created_at', 'desc')
-
       return Promise.resolve(posts)
     } catch (error) {
       console.error(error)
@@ -110,7 +102,8 @@ export default class Post extends BaseModel {
             .orderBy('created_at', 'desc')
         })
         .first()
-      return Promise.resolve(user?.posts)
+      user?.posts.map((post) => post.serialize())
+      return Promise.resolve(user?.posts.map((post) => post.serialize()))
     } catch (error) {
       console.error(error)
       return Promise.reject(error.message)
@@ -157,7 +150,7 @@ export default class Post extends BaseModel {
         title: data.title.toLocaleLowerCase(),
         description: data.description.toLocaleLowerCase(),
         user_id: userId,
-        image_name: imageName,
+        image_url: imageName,
       })
     } catch (error) {
       console.error(error)
@@ -218,7 +211,7 @@ export default class Post extends BaseModel {
    * @returns Promise
    */
   public static async update(id: number, data: PostType, imageName?: string) {
-    // preloading post data
+    // // preloading post data
     let post: Post | null
     try {
       post = await this.query()
@@ -242,7 +235,7 @@ export default class Post extends BaseModel {
 
     // if image name exists then saving new image name
     if (imageName) {
-      post.image_name = imageName
+      post.image_url = imageName
     }
     try {
       await post.save()
@@ -254,7 +247,7 @@ export default class Post extends BaseModel {
     // deleting old tags
     try {
       for (const postTag of post.postTags) {
-        await postTag.tag.delete()
+        await postTag.delete()
       }
     } catch (error) {
       console.error(error)

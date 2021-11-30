@@ -3,16 +3,9 @@ import { cuid } from '@ioc:Adonis/Core/Helpers'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Post from 'App/Models/Post'
 import ErrorService from 'App/Services/ErrorService'
-import StorePostValidator from 'App/Validators/StorePostValidator'
-import UpdatePostValidator from 'App/Validators/UpdatePostValidator'
+import PostStoreValidator from 'App/Validators/PostStoreValidator'
+import PostUpdateValidator from 'App/Validators/PostUpdateValidator'
 import fs from 'fs'
-
-// type PostStoreType = {
-//   title: string
-//   description: string
-//   postImage: any
-//   tags: string[]
-// }
 
 export default class PostsController {
   /**
@@ -48,7 +41,7 @@ export default class PostsController {
     // validate data
     let payload: any
     try {
-      payload = await request.validate(StorePostValidator)
+      payload = await request.validate(PostStoreValidator)
     } catch (error) {
       console.log(error.messages.errors)
       // errors made by form validator
@@ -124,13 +117,12 @@ export default class PostsController {
    * @description update particular post
    */
   public async update({ params, response, request, bouncer }: HttpContextContract) {
-    console.log(request.all())
     let { id } = params
 
     // validate data
     let payload: any
     try {
-      payload = await request.validate(UpdatePostValidator)
+      payload = await request.validate(PostUpdateValidator)
     } catch (error) {
       console.log(error.messages.errors)
       // errors made by form validator
@@ -156,20 +148,22 @@ export default class PostsController {
     }
 
     /**
-     * Removing old image
+     * Removing old image if new image provided
      */
-    fs.unlink(Application.tmpPath(post.image_name), (error) => {
-      if (error) {
-        console.error(error)
-        return response.status(400).json(error.message)
-      }
-    })
+    if (payload.postImage) {
+      fs.unlink(Application.tmpPath(post.image_url), (error) => {
+        if (error) {
+          console.error(error)
+          return response.status(400).json(error.message)
+        }
+      })
+    }
 
     /**
      * adding new image file to the uploads folder
      */
     let imgName: string | undefined
-    if (payload.newImage) {
+    if (payload.postImage) {
       await payload.postImage.move(Application.tmpPath('uploads'), {
         // renaming the file
         name: cuid() + '.' + payload.postImage.extname,
@@ -207,7 +201,7 @@ export default class PostsController {
       /**
        * Removing image
        */
-      fs.unlink(Application.tmpPath(post.image_name), (error) => {
+      fs.unlink(Application.tmpPath(post.image_url), (error) => {
         if (error) {
           console.error(error)
           session.flash({ error: error.message })

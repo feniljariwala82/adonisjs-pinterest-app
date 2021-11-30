@@ -21,7 +21,7 @@
         {{--  original image preview  --}}
         <div class="col-6">
           <p class="text-center">Old Image</p>
-          <img src="{{ post.image_name }}" class="img-thumbnail" alt="Image" id="oldImage">
+          <img src="{{ post.image_url }}" class="img-thumbnail" alt="Image" id="oldImage">
         </div>
 
         {{--  new image preview  --}}
@@ -226,7 +226,6 @@
     $('#postImage').on('change', function (event) {
       event.preventDefault()
       file = this.files[0]
-      formData.append('newImage', true)
     })
 
     /**
@@ -234,14 +233,13 @@
      */
     $('#submit').on('click', function (event) {
       event.preventDefault()
-      var that = this;
 
       formData.append('title', $('#titleInput').val())
       formData.append('description', $('#descriptionInput').val())
-      if (formData.get('newImage') === true) {
+      if(file) {
         formData.append('postImage', file)
       }
-      // formData.append('_csrf', $("input[name=_csrf]").val())
+
       for (var i = 0; i < formTags.length; i++) {
         formData.append('tags[]', formTags[i]);
       }

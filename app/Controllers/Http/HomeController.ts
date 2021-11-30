@@ -5,8 +5,8 @@ export default class HomeController {
   /**
    * @description home page of the application
    */
-  public async index({ view, session, response }: HttpContextContract) {
-    let posts
+  public async index({ view, session, response, auth }: HttpContextContract) {
+    let posts: Post[] = []
     try {
       posts = await Post.getAll()
     } catch (error) {

@@ -65,7 +65,7 @@
     <div class="col-6 col-sm-6 col-md-4 col-lg-3">
       {{--  post card  --}}
       <a href="{{ route('post.show', {id: post.id}) }}">
-        <img src="{{ post.image_name }}" class="card-img-bottom card-img-top" alt="image1">
+        <img src="{{ post.image_url }}" class="card-img-bottom card-img-top" alt="image1">
         <div class="card-body">
           <h5 class="card-title text-center fs-6">{{ post.title.charAt(0).toUpperCase() +  post.title.slice(1) }}</h5>
         </div>
