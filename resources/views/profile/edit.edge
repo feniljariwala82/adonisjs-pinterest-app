@@ -24,9 +24,29 @@
 
       {{-- image preview  --}}
       <div class="col-12">
+
+        @if(user.avatar_url)
+        <img src="{{ user.avatar_url }}" class="img-thumbnail" alt="Image" id="upImage" style="display:none;">
+        <p class="fs-4 text-capitalize text-center" id="imgMessage">Image not selected!</p>
+        @else
         <img src="" class="img-thumbnail" alt="Image" id="upImage" style="display:none;">
         <p class="fs-4 text-capitalize text-center" id="imgMessage">Image not selected!</p>
+        @endif
+
       </div>
+
+      <div class="col-12">
+
+        @if(user.avatar_url)
+        <img src="{{ user.avatar_url }}" class="img-thumbnail" alt="Image" id="upImage" style="display:none;">
+        <p class="fs-4 text-capitalize text-center" id="imgMessage">Image not selected!</p>
+        @else
+        <img src="" class="img-thumbnail" alt="Image" id="upImage" style="display:none;">
+        <p class="fs-4 text-capitalize text-center" id="imgMessage">Image not selected!</p>
+        @endif
+
+      </div>
+
     </div>
 
     {{--  form column  --}}
@@ -50,7 +70,7 @@
           <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
             <div class="form-floating mb-3">
               <input type="text" class="form-control" id="firstName" name="firstName" placeholder="enter first name"
-                required>
+                value="{{ user.first_name }}" required>
               <label for="floatingInput">First Name</label>
             </div>
           </div>
@@ -58,7 +78,8 @@
           {{--  last name  --}}
           <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
             <div class="form-floating mb-3">
-              <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Dou" required>
+              <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Dou"
+                value="{{ user.last_name }}" required>
               <label for="floatingInput">Last Name</label>
             </div>
           </div>
@@ -76,7 +97,8 @@
           {{--  email  --}}
           <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
             <div class="form-floating mb-3">
-              <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" required>
+              <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com"
+                value="{{ user.email }}" required>
               <label for="floatingInput">Email address</label>
             </div>
           </div>

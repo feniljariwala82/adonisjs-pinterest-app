@@ -13,6 +13,7 @@
   </nav>
 
   <div class="row mt-4" data-masonry='{"percentPosition": true }'>
+    @set('posts', user.posts.map((post) => post.serialize()))
     @each(post in posts)
     <div class="col-6 col-sm-6 col-md-4 col-lg-3">
       {{--  post card  --}}

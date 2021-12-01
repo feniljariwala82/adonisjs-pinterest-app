@@ -18,8 +18,8 @@ export default class PostsController {
     }
 
     try {
-      let posts = await Post.getAllByUser(auth.user.id)
-      return view.render('post/index', { posts })
+      let user = await Post.getAllByUser(auth.user.id)
+      return view.render('post/index', { user })
     } catch (error) {
       console.error(error)
       session.flash({ error })

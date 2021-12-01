@@ -24,7 +24,7 @@ export default class ProfilesController {
   /**
    * @description open edit profile form
    */
-  public async edit({ session, response, view, params, auth }: HttpContextContract) {
+  public async edit({ session, response, view, params }: HttpContextContract) {
     let { id } = params
 
     try {

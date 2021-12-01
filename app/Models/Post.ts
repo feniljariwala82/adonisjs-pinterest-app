@@ -102,8 +102,7 @@ export default class Post extends BaseModel {
             .orderBy('created_at', 'desc')
         })
         .first()
-      user?.posts.map((post) => post.serialize())
-      return Promise.resolve(user?.posts.map((post) => post.serialize()))
+      return Promise.resolve(user)
     } catch (error) {
       console.error(error)
       return Promise.reject(error.message)
