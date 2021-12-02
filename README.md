@@ -12,13 +12,13 @@
 ## Installation
 
 ```bash
-git clone https://github.com/feniljariwala82/adonisjs-bootstrap5-boilerplate.git
+git clone https://github.com/feniljariwala82/adonisjs-pinterest-app.git
 ```
 
 ## Start Application
 
 ```bash
-cd adonisjs-bootstrap5-boilerplate/
+cd adonisjs-pinterest-app
 yarn install
 yarn dev
 ```
