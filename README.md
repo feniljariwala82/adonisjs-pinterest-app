@@ -1,12 +1,13 @@
 # About This Repository
 
-Simple adonisjs boilerplate project pre configured with [Bootstrap-5](https://getbootstrap.com/docs/5.0/getting-started/introduction/)
+## Pinterest Clone Using AdonisJs
 
 ## Requirement
 
 1. git bash terminal(optional)
 2. For cloning you must need git installed on your computer
 3. Nodejs must be installed
+4. MySql database system
 
 ## Installation
 

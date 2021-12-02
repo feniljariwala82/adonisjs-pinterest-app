@@ -22,107 +22,95 @@
     <div class="col-12 col-md-6">
       <h4 class="mb-4 fs-4 fw-bold text-center">Profile Image Preview</h4>
 
-      {{-- image preview  --}}
-      <div class="col-12">
+      <div class="d-flex justify-content-center align-items-start">
 
-        @if(user.avatar_url)
-        <img src="{{ user.avatar_url }}" class="img-thumbnail" alt="Image" id="upImage" style="display:none;">
-        <p class="fs-4 text-capitalize text-center" id="imgMessage">Image not selected!</p>
-        @else
-        <img src="" class="img-thumbnail" alt="Image" id="upImage" style="display:none;">
-        <p class="fs-4 text-capitalize text-center" id="imgMessage">Image not selected!</p>
-        @endif
+        {{--  original image preview  --}}
+        <div class="col-6">
+          <p class="text-center fs-4">Previous Image</p>
+          @if(user.avatar_url)
+          <img src="{{ user.imageUrl }}" class="img-thumbnail" alt="Image" id="avatarUrl">
+          @else
+          <p class="fs-5 text-capitalize text-center" id="imgMessage">Image not available!</p>
+          @endif
+        </div>
 
+        {{--  new image preview  --}}
+        <div class="col-6 ms-2" id="imgContainer" style="display:none;">
+          <p class="text-center fs-4">New Image</p>
+          <img src="" class="img-thumbnail" alt="Image" id="upImage" style="display:none;">
+        </div>
       </div>
-
-      <div class="col-12">
-
-        @if(user.avatar_url)
-        <img src="{{ user.avatar_url }}" class="img-thumbnail" alt="Image" id="upImage" style="display:none;">
-        <p class="fs-4 text-capitalize text-center" id="imgMessage">Image not selected!</p>
-        @else
-        <img src="" class="img-thumbnail" alt="Image" id="upImage" style="display:none;">
-        <p class="fs-4 text-capitalize text-center" id="imgMessage">Image not selected!</p>
-        @endif
-
-      </div>
-
     </div>
 
     {{--  form column  --}}
     <div class="col-12 col-md-6 mt-4 mt-sm-0">
-      <form action="{{ route('profile.update', {id: auth.user.id }, { qs: {
-        _method:'PUT'
-      }}) }}" method="POST" id="myForm">
-        {{ csrfField() }}
 
-        <div class="d-flex flex-column justify-content-center align-items-center">
-          <div class="col align-items-start">
-            <h4 class="mb-4 fs-4 fw-bold">Edit Profile</h4>
-          </div>
+      <div class="d-flex flex-column justify-content-center align-items-center">
+        <div class="col align-items-start">
+          <h4 class="mb-4 fs-4 fw-bold">Edit Profile</h4>
+        </div>
 
-          {{--  alert container  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6" id="alertContainer">
-            {{--  alert will be appended here  --}}
-          </div>
+        {{--  alert container  --}}
+        <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6" id="alertContainer">
+          {{--  alert will be appended here  --}}
+        </div>
 
-          {{--  first name  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
-            <div class="form-floating mb-3">
-              <input type="text" class="form-control" id="firstName" name="firstName" placeholder="enter first name"
-                value="{{ user.first_name }}" required>
-              <label for="floatingInput">First Name</label>
-            </div>
-          </div>
-
-          {{--  last name  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
-            <div class="form-floating mb-3">
-              <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Dou"
-                value="{{ user.last_name }}" required>
-              <label for="floatingInput">Last Name</label>
-            </div>
-          </div>
-
-          {{--  profile image  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
-            <div class="form-floating mb-3">
-              <div class="input-group mb-3">
-                <label class="input-group-text" for="inputGroupFile01">Profile Image</label>
-                <input type="file" class="form-control" id="postImage" name="postImage">
-              </div>
-            </div>
-          </div>
-
-          {{--  email  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
-            <div class="form-floating mb-3">
-              <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com"
-                value="{{ user.email }}" required>
-              <label for="floatingInput">Email address</label>
-            </div>
-          </div>
-
-          {{--  password  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
-            <div class="form-floating mb-3">
-              <input type="password" class="form-control" id="passwordInput" name="password" placeholder="Password"
-                required>
-              <label for="floatingPassword">Password</label>
-            </div>
-          </div>
-
-          {{--  buttons  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6 mt-2">
-            <button class="btn btn-primary" id="submit">Update Profile</button>
+        {{--  first name  --}}
+        <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+          <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="firstName" name="firstName" placeholder="enter first name"
+              value="{{ user.first_name }}" required>
+            <label for="floatingInput">First Name</label>
           </div>
         </div>
-      </form>
+
+        {{--  last name  --}}
+        <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+          <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Dou"
+              value="{{ user.last_name }}" required>
+            <label for="floatingInput">Last Name</label>
+          </div>
+        </div>
+
+        {{--  profile image  --}}
+        <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+          <div class="form-floating mb-3">
+            <div class="input-group mb-3">
+              <label class="input-group-text" for="inputGroupFile01">Profile Image</label>
+              <input type="file" class="form-control" id="postImage" name="postImage">
+            </div>
+          </div>
+        </div>
+
+        {{--  email  --}}
+        <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+          <div class="form-floating mb-3">
+            <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com"
+              value="{{ user.email }}" required>
+            <label for="floatingInput">Email address</label>
+          </div>
+        </div>
+
+        {{--  password  --}}
+        <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+          <div class="form-floating mb-3">
+            <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+            <label for="floatingPassword">Password</label>
+          </div>
+        </div>
+
+        {{--  buttons  --}}
+        <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6 mt-2">
+          <button class="btn btn-primary" id="submit">Update Profile</button>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
 
-<script>
+<script type="module">
   $(document).ready(function () {
     // let file
     $('input[type="file"]').change(function (e) {
@@ -149,6 +137,9 @@
     $('#postImage').on('change', function (event) {
       event.preventDefault()
       file = this.files[0]
+      $('#imgContainer').css('display', 'inline-block')
+      formData.append('avatarUrl', file)
+      console.log(formData.get('avatarUrl'))
     })
 
     /**
@@ -156,14 +147,11 @@
      */
     $('#submit').on('click', function (event) {
       event.preventDefault()
-      var that = this;
 
       formData.append('firstName', $('#firstName').val())
       formData.append('lastName', $('#lastName').val())
-      formData.append('postImage', file)
       formData.append('email', $('#email').val())
       formData.append('password', $('#password').val())
-
 
       $.ajax({
           url: "{{ route('profile.update', {id: auth.user.id }, { qs: { _method:'PUT' }}) }}",
@@ -185,6 +173,11 @@
            * On error resetting form data for stopping data duplication,
            */
           formData = new FormData()
+             $("#upImage")
+             .css('display', 'block')
+             .attr('src','')
+        $('#imgContainer').css('display', 'none')
+
           toast.error(error.responseText)
         })
     })

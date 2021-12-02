@@ -1,7 +1,10 @@
 import Hash from '@ioc:Adonis/Core/Hash'
-import { BaseModel, beforeSave, column, hasMany, HasMany } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, beforeSave, column, hasMany, HasMany, computed } from '@ioc:Adonis/Lucid/Orm'
 import Post from 'App/Models/Post'
 import { DateTime } from 'luxon'
+import path from 'path'
+import Application from '@ioc:Adonis/Core/Application'
+import fs from 'fs'
 
 type CreateUser = {
   firstName: string
@@ -15,7 +18,6 @@ type UpdateUser = {
   lastName?: string
   email?: string
   password?: string
-  avatarUrl?: any
 }
 
 export default class User extends BaseModel {
@@ -47,18 +49,19 @@ export default class User extends BaseModel {
   public updatedAt: DateTime
 
   // hashing password
-  @beforeSave()
-  public static async hashPassword(user: User) {
-    if (user.$dirty.password) {
-      user.password = await Hash.make(user.password)
-    }
-  }
+  // @beforeSave()
+  // public static async hashPassword(user: User) {
+  //   if (user.$dirty.password) {
+  //     user.password = await Hash.make(user.password.trim())
+  //   }
+  // }
 
   // before saving lower casing all names
   @beforeSave()
-  public static async lowerCaseData(user: User) {
+  public static async beforeSave(user: User) {
     user.first_name = user.first_name.toLocaleLowerCase().trim()
     user.last_name = user.last_name.toLocaleLowerCase().trim()
+    user.email = user.email.toLocaleLowerCase().trim()
   }
 
   // user has many posts
@@ -66,6 +69,16 @@ export default class User extends BaseModel {
     foreignKey: 'user_id', // defaults to userId
   })
   public posts: HasMany<typeof Post>
+
+  // this will generate URL on every call
+  @computed()
+  public get imageUrl() {
+    if (this.avatar_url) {
+      return path.join('/uploads/' + this.avatar_url)
+    } else {
+      return false
+    }
+  }
 
   /**
    * @description Get all user's post
@@ -101,7 +114,7 @@ export default class User extends BaseModel {
     try {
       await this.create({
         email: user.email.toLocaleLowerCase().trim(),
-        password: user.password.trim(),
+        password: await Hash.make(user.password.trim()),
         first_name: user.firstName.toLocaleLowerCase().trim(),
         last_name: user.lastName.toLocaleLowerCase().trim(),
       })
@@ -118,8 +131,10 @@ export default class User extends BaseModel {
    * @param updateData new data
    * @returns Promise
    */
-  public static async update(id: number, updateData: UpdateUser) {
-    const { firstName, lastName, email, password, avatarUrl } = updateData
+  public static async update(id: number, updateData: UpdateUser, imageName?: string) {
+    const { firstName, lastName, email, password } = updateData
+
+    console.log(updateData)
 
     // checking whether the user exists or not
     let user: User
@@ -130,14 +145,33 @@ export default class User extends BaseModel {
       return Promise.reject('User not found')
     }
 
+    /**
+     * Removing old image if new image provided
+     */
+    if (imageName && user.avatar_url) {
+      fs.unlink(Application.tmpPath(path.join('/uploads/' + user.avatar_url)), (error) => {
+        if (error) {
+          console.error(error)
+          return Promise.reject(error.message)
+        }
+      })
+    }
+
     // updating the user data
     user.first_name = firstName ? firstName : user.first_name
     user.last_name = lastName ? lastName : user.last_name
     user.email = email ? email : user.email
-    user.password = password ? password : user.password
-    user.avatar_url = avatarUrl ? avatarUrl : user.avatar_url
+    user.avatar_url = imageName ? imageName : user.avatar_url
+
+    // for password
+    if (password) {
+      user.password = await Hash.make(password.trim())
+    }
+
+    // saving user data
     try {
-      await user.save()
+      let some = await user.save()
+      console.log(some)
       return Promise.resolve('User updated')
     } catch (error) {
       console.error(error)

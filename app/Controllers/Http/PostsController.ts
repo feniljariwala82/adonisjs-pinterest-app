@@ -6,6 +6,7 @@ import ErrorService from 'App/Services/ErrorService'
 import PostStoreValidator from 'App/Validators/PostStoreValidator'
 import PostUpdateValidator from 'App/Validators/PostUpdateValidator'
 import fs from 'fs'
+import path from 'path'
 
 export default class PostsController {
   /**
@@ -59,7 +60,7 @@ export default class PostsController {
     // creating a post
     let result: string = ''
     try {
-      result = await Post.store(payload, imgName!, auth.user!.id)
+      result = await Post.store(auth.user!.id, payload, imgName!)
     } catch (error) {
       console.error(error)
       session.flash({ error })
@@ -79,7 +80,7 @@ export default class PostsController {
     // fetching particular post
     try {
       let post = await Post.getPostById(id)
-      return view.render('post/show', { post })
+      return view.render('post/show', { post: post.serialize() })
     } catch (error) {
       console.error(error)
       session.flash({ error })
@@ -105,7 +106,7 @@ export default class PostsController {
         return response.redirect().back()
       }
 
-      return view.render('post/edit', { post })
+      return view.render('post/edit', { post: post.serialize() })
     } catch (error) {
       console.error(error)
       session.flash({ error })
@@ -151,7 +152,7 @@ export default class PostsController {
      * Removing old image if new image provided
      */
     if (payload.postImage) {
-      fs.unlink(Application.tmpPath(post.image_url), (error) => {
+      fs.unlink(Application.tmpPath(path.join('/uploads/' + post.image_url)), (error) => {
         if (error) {
           console.error(error)
           return response.status(400).json(error.message)
@@ -201,7 +202,7 @@ export default class PostsController {
       /**
        * Removing image
        */
-      fs.unlink(Application.tmpPath(post.image_url), (error) => {
+      fs.unlink(Application.tmpPath(path.join('/uploads/' + post.image_url)), (error) => {
         if (error) {
           console.error(error)
           session.flash({ error: error.message })

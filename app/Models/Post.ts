@@ -1,6 +1,6 @@
 import {
   BaseModel,
-  beforeSave,
+  computed,
   BelongsTo,
   belongsTo,
   column,
@@ -55,14 +55,13 @@ export default class Post extends BaseModel {
   })
   public postTags: HasMany<typeof PostTag>
 
-  @beforeSave()
-  public static async beforeSave(post: Post) {
-    // which means the data is updated but not image
-    if (post.image_url.includes('uploads')) {
-      post.image_url
+  // this will generate URL on every call
+  @computed()
+  public get imageUrl() {
+    if (this.image_url) {
+      return path.join('/uploads/' + this.image_url)
     } else {
-      // else the image is new
-      post.image_url = path.join('/uploads/', post.image_url)
+      return false
     }
   }
 
@@ -141,7 +140,7 @@ export default class Post extends BaseModel {
    * @param task task to be created
    * @returns Promise
    */
-  public static async store(data: PostType, imageName: string, userId: number) {
+  public static async store(userId: number, data: PostType, imageName: string) {
     // creating post
     let post: Post
     try {
@@ -210,7 +209,7 @@ export default class Post extends BaseModel {
    * @returns Promise
    */
   public static async update(id: number, data: PostType, imageName?: string) {
-    // // preloading post data
+    // preloading post data
     let post: Post | null
     try {
       post = await this.query()
