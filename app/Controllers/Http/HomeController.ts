@@ -6,15 +6,13 @@ export default class HomeController {
    * @description home page of the application
    */
   public async index({ view, session, response }: HttpContextContract) {
-    let posts: Post[] = []
     try {
-      posts = await Post.getAll()
+      let posts = await Post.getAll()
+      return view.render('welcome', { posts: posts.map((post) => post.serialize()) })
     } catch (error) {
       console.error(error)
       session.flash({ error })
       return response.redirect().back()
     }
-
-    return view.render('welcome', { posts })
   }
 }
