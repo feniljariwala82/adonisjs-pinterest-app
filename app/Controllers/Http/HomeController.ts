@@ -8,7 +8,7 @@ export default class HomeController {
   public async index({ view, session, response }: HttpContextContract) {
     try {
       let posts = await Post.getAll()
-      return view.render('welcome', { posts: posts.map((post) => post.serialize()) })
+      return view.render('welcome', { posts })
     } catch (error) {
       console.error(error)
       session.flash({ error })

@@ -7,6 +7,7 @@ import PostStoreValidator from 'App/Validators/PostStoreValidator'
 import PostUpdateValidator from 'App/Validators/PostUpdateValidator'
 import fs from 'fs'
 import path from 'path'
+import Drive from '@ioc:Adonis/Core/Drive'
 
 export default class PostsController {
   /**
@@ -20,7 +21,7 @@ export default class PostsController {
 
     try {
       let user = await Post.getAllByUser(auth.user.id)
-      return view.render('post/index', { user })
+      return view.render('post/index', { posts: user?.posts })
     } catch (error) {
       console.error(error)
       session.flash({ error })
@@ -39,36 +40,51 @@ export default class PostsController {
    * @description to save new post
    */
   public async store({ request, session, response, auth }: HttpContextContract) {
+    if (!auth.user) {
+      return response.status(400).json('Unauthorized')
+    }
+
     // validate data
-    let payload: any
+    // let payload: any
     try {
-      payload = await request.validate(PostStoreValidator)
+      let payload = await request.validate(PostStoreValidator)
+
+      // moving file to the uploads folder
+      await payload.postImage.moveToDisk(
+        auth.user.id.toString(),
+        {
+          name: cuid() + '.' + payload.postImage.extname,
+        },
+        'local'
+      )
+      let imgName = payload.postImage.fileName
+      let imgUrl = await Drive.getUrl(path.join(auth.user.id.toString(), imgName!))
+
+      // creating a post
+      let result: string = ''
+      try {
+        result = await Post.store({
+          id: auth.user.id,
+          title: payload.title,
+          description: payload.description,
+          imgName: imgName!,
+          imgUrl,
+          tags: payload.tags,
+        })
+      } catch (error) {
+        console.error(error)
+        session.flash({ error })
+        return response.redirect().back()
+      }
+
+      session.flash({ success: result })
+      return response.redirect().toRoute('post.index')
     } catch (error) {
       console.log(error.messages.errors)
       // errors made by form validator
       let errorMessages = ErrorService.filterMessages(error)
       return response.status(400).json(errorMessages ? errorMessages : error)
     }
-
-    // moving file to the uploads folder
-    await payload.postImage.move(Application.tmpPath('uploads'), {
-      // renaming the file
-      name: cuid() + '.' + payload.postImage.extname,
-    })
-    let imgName = payload.postImage.fileName
-
-    // creating a post
-    let result: string = ''
-    try {
-      result = await Post.store(auth.user!.id, payload, imgName!)
-    } catch (error) {
-      console.error(error)
-      session.flash({ error })
-      return response.redirect().back()
-    }
-
-    session.flash({ success: result })
-    return response.redirect().toRoute('post.index')
   }
 
   /**
@@ -80,7 +96,7 @@ export default class PostsController {
     // fetching particular post
     try {
       let post = await Post.getPostById(id)
-      return view.render('post/show', { post: post.serialize() })
+      return view.render('post/show', { post })
     } catch (error) {
       console.error(error)
       session.flash({ error })
@@ -106,7 +122,7 @@ export default class PostsController {
         return response.redirect().back()
       }
 
-      return view.render('post/edit', { post: post.serialize() })
+      return view.render('post/edit', { post })
     } catch (error) {
       console.error(error)
       session.flash({ error })
@@ -117,68 +133,76 @@ export default class PostsController {
   /**
    * @description update particular post
    */
-  public async update({ params, response, request, bouncer }: HttpContextContract) {
+  public async update({ params, response, request, bouncer, auth }: HttpContextContract) {
     let { id } = params
 
+    if (!auth.user) {
+      return response.status(400).json('Unauthorized')
+    }
+
     // validate data
-    let payload: any
     try {
-      payload = await request.validate(PostUpdateValidator)
+      let payload = await request.validate(PostUpdateValidator)
+
+      // checking post available or not
+      let post: Post
+      try {
+        post = await Post.findOrFail(id)
+      } catch (error) {
+        console.error(error)
+        return response.status(400).json('Post not found')
+      }
+
+      // checking authorization
+      try {
+        await bouncer.with('PostPolicy').authorize('update', post)
+      } catch (error) {
+        console.error(error)
+        return response.status(400).json('Not authorized to perform this action')
+      }
+
+      /**
+       * Removing old image if new image provided
+       */
+      let imgUrl: string = ''
+      let imgName: string | undefined = ''
+      if (payload.postImage) {
+        await Drive.delete(path.join(post.user_id.toString(), post.image_name))
+
+        /**
+         * adding new image file to the uploads folder
+         */
+        await payload.postImage.moveToDisk(
+          auth.user.id.toString(),
+          {
+            name: cuid() + '.' + payload.postImage.extname,
+          },
+          'local'
+        )
+        imgName = payload.postImage.fileName
+        imgUrl = await Drive.getUrl(path.join(auth.user.id.toString(), imgName!))
+      }
+
+      // updating post data
+      try {
+        let result = await Post.update({
+          id,
+          title: payload.title,
+          description: payload.description,
+          tags: payload.tags,
+          imgName,
+          imgUrl,
+        })
+        return response.status(200).json(result)
+      } catch (error) {
+        console.error(error)
+        return response.status(400).json(error)
+      }
     } catch (error) {
       console.log(error.messages.errors)
       // errors made by form validator
       let errorMessages = ErrorService.filterMessages(error)
       return response.status(400).json(errorMessages ? errorMessages : error)
-    }
-
-    // checking post available or not
-    let post: Post
-    try {
-      post = await Post.findOrFail(id)
-    } catch (error) {
-      console.error(error)
-      return response.status(400).json('Post not found')
-    }
-
-    // checking authorization
-    try {
-      await bouncer.with('PostPolicy').authorize('update', post)
-    } catch (error) {
-      console.error(error)
-      return response.status(400).json('Not authorized to perform this action')
-    }
-
-    /**
-     * Removing old image if new image provided
-     */
-    if (payload.postImage) {
-      fs.unlink(Application.tmpPath(path.join('/uploads/' + post.image_url)), (error) => {
-        if (error) {
-          console.error(error)
-          return response.status(400).json(error.message)
-        }
-      })
-    }
-
-    /**
-     * adding new image file to the uploads folder
-     */
-    let imgName: string | undefined
-    if (payload.postImage) {
-      await payload.postImage.move(Application.tmpPath('uploads'), {
-        // renaming the file
-        name: cuid() + '.' + payload.postImage.extname,
-      })
-      imgName = payload.postImage.fileName
-    }
-
-    // updating post data
-    try {
-      let result = await Post.update(id, payload, imgName)
-      return response.status(200).json(result)
-    } catch (error) {
-      console.error(error)
-      return response.status(400).json(error)
     }
   }
 
@@ -202,15 +226,7 @@ export default class PostsController {
       /**
        * Removing image
        */
-      fs.unlink(Application.tmpPath(path.join('/uploads/' + post.image_url)), (error) => {
-        if (error) {
-          console.error(error)
-          session.flash({ error: error.message })
-          return response.redirect().back()
-        }
-
-        console.log('File is deleted.')
-      })
+      await Drive.delete(path.join(post.user_id.toString(), post.image_name))
 
       // deleting
       await post.delete()

@@ -1,23 +1,33 @@
 import {
   BaseModel,
-  computed,
   BelongsTo,
   belongsTo,
   column,
   hasMany,
   HasMany,
+  beforeSave,
 } from '@ioc:Adonis/Lucid/Orm'
 import PostTag from 'App/Models/PostTag'
 import Tag from 'App/Models/Tag'
 import User from 'App/Models/User'
 import { DateTime } from 'luxon'
-import path from 'path'
 
 type PostType = {
+  id: number
   title: string
   description: string
   tags: string[]
-  postImage: any
+  imgName: string
+  imgUrl: string
+}
+
+type UpdateType = {
+  id: number
+  title: string
+  description: string
+  tags: string[]
+  imgName?: string
+  imgUrl?: string
 }
 
 export default class Post extends BaseModel {
@@ -32,6 +42,9 @@ export default class Post extends BaseModel {
 
   @column()
   public user_id: number
+
+  @column()
+  public image_name: string
 
   @column()
   public image_url: string
@@ -55,14 +68,10 @@ export default class Post extends BaseModel {
   })
   public postTags: HasMany<typeof PostTag>
 
-  // this will generate URL on every call
-  @computed()
-  public get imageUrl() {
-    if (this.image_url) {
-      return path.join('/uploads/' + this.image_url)
-    } else {
-      return false
-    }
+  @beforeSave()
+  public static async beforeSave(post: Post) {
+    post.title = post.title.toLowerCase().trim()
+    post.description = post.description.toLowerCase().trim()
   }
 
   /**
@@ -140,15 +149,16 @@ export default class Post extends BaseModel {
    * @param task task to be created
    * @returns Promise
    */
-  public static async store(userId: number, data: PostType, imageName: string) {
+  public static async store(data: PostType) {
     // creating post
     let post: Post
     try {
       post = await this.create({
         title: data.title.toLocaleLowerCase(),
         description: data.description.toLocaleLowerCase(),
-        user_id: userId,
-        image_url: imageName,
+        user_id: data.id,
+        image_url: data.imgUrl,
+        image_name: data.imgName,
       })
     } catch (error) {
       console.error(error)
@@ -208,12 +218,12 @@ export default class Post extends BaseModel {
    * @param data data to be updated
    * @returns Promise
    */
-  public static async update(id: number, data: PostType, imageName?: string) {
+  public static async update(data: UpdateType) {
     // preloading post data
     let post: Post | null
     try {
       post = await this.query()
-        .where('id', id)
+        .where('id', data.id)
         .preload('postTags', (postTagQuery) => {
           postTagQuery.preload('tag')
         })
@@ -228,13 +238,19 @@ export default class Post extends BaseModel {
     }
 
     // updating post data
-    post.title = data.title.toLocaleLowerCase()
-    post.description = data.description.toLocaleLowerCase()
+    post.title = data.title
+    post.description = data.description
 
     // if image name exists then saving new image name
-    if (imageName) {
-      post.image_url = imageName
+    if (data.imgName) {
+      post.image_name = data.imgName
     }
+
+    // if image name exists then saving new image name
+    if (data.imgUrl) {
+      post.image_url = data.imgUrl
+    }
+
     try {
       await post.save()
     } catch (error) {

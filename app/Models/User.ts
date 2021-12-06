@@ -40,7 +40,16 @@ export default class User extends BaseModel {
   public last_name: string
 
   @column()
+  public full_name: string
+
+  @column()
+  public avatar_name: string
+
+  @column()
   public avatar_url: string
+
+  @column()
+  public social_auth: string
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
@@ -62,6 +71,8 @@ export default class User extends BaseModel {
     user.first_name = user.first_name.toLocaleLowerCase().trim()
     user.last_name = user.last_name.toLocaleLowerCase().trim()
     user.email = user.email.toLocaleLowerCase().trim()
+    user.full_name =
+      user.first_name.toLocaleLowerCase().trim() + ' ' + user.last_name.toLocaleLowerCase().trim()
   }
 
   // user has many posts
@@ -69,16 +80,6 @@ export default class User extends BaseModel {
     foreignKey: 'user_id', // defaults to userId
   })
   public posts: HasMany<typeof Post>
-
-  // this will generate URL on every call
-  @computed()
-  public get imageUrl() {
-    if (this.avatar_url) {
-      return path.join('/uploads/' + this.avatar_url)
-    } else {
-      return false
-    }
-  }
 
   /**
    * @description Get all user's post
@@ -113,10 +114,10 @@ export default class User extends BaseModel {
     // creating user
     try {
       await this.create({
-        email: user.email.toLocaleLowerCase().trim(),
+        email: user.email,
         password: await Hash.make(user.password.trim()),
-        first_name: user.firstName.toLocaleLowerCase().trim(),
-        last_name: user.lastName.toLocaleLowerCase().trim(),
+        first_name: user.firstName,
+        last_name: user.lastName,
       })
       return Promise.resolve('User created')
     } catch (error) {

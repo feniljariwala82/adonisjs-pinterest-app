@@ -24,4 +24,16 @@ export default Env.rules({
   DRIVE_DISK: Env.schema.enum(['local'] as const),
   NODE_ENV: Env.schema.enum(['development', 'production', 'testing'] as const),
   DB_CONNECTION: Env.schema.string(),
+
+  // google ally
+  GOOGLE_CLIENT_ID: Env.schema.string(),
+  GOOGLE_CLIENT_SECRET: Env.schema.string(),
+
+  // github ally
+  GITHUB_CLIENT_ID: Env.schema.string(),
+  GITHUB_CLIENT_SECRET: Env.schema.string(),
+
+  // facebook ally
+  FACEBOOK_CLIENT_ID: Env.schema.string(),
+  FACEBOOK_CLIENT_SECRET: Env.schema.string(),
 })

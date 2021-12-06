@@ -13,6 +13,18 @@ Route.group(() => {
     .as('signup')
     .middleware('isGuest')
   Route.get('/logout', 'AuthController.logout').as('logout').middleware(['auth'])
+
+  // google social auth
+  Route.get('/google/redirect', 'AuthController.googleRedirect').as('google.redirect')
+  Route.get('/google/callback', 'AuthController.googleCallback').as('google.callback')
+
+  // github social auth
+  Route.get('/github/redirect', 'AuthController.githubRedirect').as('github.redirect')
+  Route.get('/github/callback', 'AuthController.githubCallback').as('github.callback')
+
+  // facebook social auth
+  Route.get('/fb/redirect', 'AuthController.fbRedirect').as('fb.redirect')
+  Route.get('/fb/callback', 'AuthController.fbCallback').as('fb.callback')
 })
   .prefix('/auth')
   .as('auth')
@@ -32,7 +44,7 @@ Route.resource('/post', 'PostsController').middleware({
 })
 
 Route.group(() => {
-  Route.get('/profile/:email', 'ProfilesController.index').as('index').middleware(['silentAuth'])
+  Route.get('/profile/:email', 'ProfilesController.show').as('index').middleware(['silentAuth'])
   Route.get('/profile/:id/edit', 'ProfilesController.edit').as('edit').middleware(['auth'])
   Route.put('/profile/:id', 'ProfilesController.update').as('update').middleware(['auth'])
 }).as('profile')

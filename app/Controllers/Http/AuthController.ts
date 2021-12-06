@@ -1,7 +1,10 @@
-import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { schema, rules } from '@ioc:Adonis/Core/Validator'
-import User from 'App/Models/User'
 import Hash from '@ioc:Adonis/Core/Hash'
+import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { rules, schema } from '@ioc:Adonis/Core/Validator'
+import User from 'App/Models/User'
+import constants from 'Config/constants'
+
+const { GITHUB, GOOGLE, FACEBOOK } = constants.allyType
 
 export default class AuthController {
   /**
@@ -107,6 +110,225 @@ export default class AuthController {
     } catch (error) {
       session.flash({ error })
       return response.redirect().back()
+    }
+  }
+
+  /**
+   * @description redirect to google login page
+   */
+  public async googleRedirect({ ally }: HttpContextContract) {
+    return ally.use('google').redirect()
+  }
+
+  /**
+   * @description callback route
+   */
+  public async googleCallback({ ally, session, response, auth }: HttpContextContract) {
+    const google = ally.use('google')
+
+    /**
+     * User has explicitly denied the login request
+     */
+    if (google.accessDenied()) {
+      session.flash({ error: 'Access was denied' })
+      return response.redirect().toRoute('auth.login')
+    }
+
+    /**
+     * Unable to verify the CSRF state
+     */
+    if (google.stateMisMatch()) {
+      session.flash({ error: 'Request expired. Retry again' })
+      return response.redirect().toRoute('auth.login')
+    }
+
+    /**
+     * There was an unknown error during the redirect
+     */
+    if (google.hasError()) {
+      session.flash({ error: 'Redirection error' })
+      return response.redirect().toRoute('auth.login')
+    }
+
+    /**
+     * Finally, access the user
+     */
+    try {
+      const authUser = await google.user()
+
+      /**
+       * Making the user logged in
+       */
+      const user = await User.firstOrCreate(
+        { email: authUser.email! },
+        {
+          first_name: authUser.original.given_name,
+          last_name: authUser.original.family_name,
+          email: authUser.email!,
+          avatar_url: authUser.avatarUrl!,
+          social_auth: GOOGLE,
+        }
+      )
+
+      /**
+       * Login user using the web guard
+       */
+      await auth.use('web').login(user)
+
+      session.flash({ success: 'Logged In' })
+      return response.redirect().toRoute('post.index')
+    } catch (error) {
+      session.flash({ error: error.message })
+      return response.redirect().toRoute('auth.login')
+    }
+  }
+
+  /**
+   * @description redirect to google login page
+   */
+  public async githubRedirect({ ally }: HttpContextContract) {
+    return ally.use('github').redirect()
+  }
+
+  /**
+   * @description callback route
+   */
+  public async githubCallback({ ally, session, response, auth }: HttpContextContract) {
+    let github: any
+    try {
+      github = ally.use('github')
+    } catch (error) {
+      console.log(error)
+    }
+
+    /**
+     * User has explicitly denied the login request
+     */
+    if (github.accessDenied()) {
+      session.flash({ error: 'Access was denied' })
+      return response.redirect().toRoute('auth.login')
+    }
+
+    /**
+     * Unable to verify the CSRF state
+     */
+    if (github.stateMisMatch()) {
+      session.flash({ error: 'Request expired. Retry again' })
+      return response.redirect().toRoute('auth.login')
+    }
+
+    /**
+     * There was an unknown error during the redirect
+     */
+    if (github.hasError()) {
+      session.flash({ error: 'Redirection error' })
+      return response.redirect().toRoute('auth.login')
+    }
+
+    /**
+     * Finally, access the user
+     */
+    try {
+      const authUser = await github.user()
+
+      /**
+       * Making the user logged in
+       */
+      const user = await User.firstOrCreate(
+        { email: authUser.email! },
+        {
+          first_name: authUser.name.split(' ')[0],
+          last_name: authUser.name.split(' ')[1],
+          email: authUser.email!,
+          avatar_url: authUser.avatarUrl!,
+          social_auth: GITHUB,
+        }
+      )
+
+      /**
+       * Login user using the web guard
+       */
+      await auth.use('web').login(user)
+
+      session.flash({ success: 'Logged In' })
+      return response.redirect().toRoute('post.index')
+    } catch (error) {
+      console.log(error)
+      session.flash({ error: error.message })
+      return response.redirect().toRoute('auth.login')
+    }
+  }
+
+  /**
+   * @description redirect to google login page
+   */
+  public async fbRedirect({ ally }: HttpContextContract) {
+    return ally.use('facebook').redirect()
+  }
+
+  /**
+   * @description callback route
+   */
+  public async fbCallback({ ally, session, response, auth }: HttpContextContract) {
+    let faceBook = ally.use('facebook')
+
+    /**
+     * User has explicitly denied the login request
+     */
+    if (faceBook.accessDenied()) {
+      session.flash({ error: 'Access was denied' })
+      return response.redirect().toRoute('auth.login')
+    }
+
+    /**
+     * Unable to verify the CSRF state
+     */
+    if (faceBook.stateMisMatch()) {
+      session.flash({ error: 'Request expired. Retry again' })
+      return response.redirect().toRoute('auth.login')
+    }
+
+    /**
+     * There was an unknown error during the redirect
+     */
+    if (faceBook.hasError()) {
+      session.flash({ error: 'Redirection error' })
+      return response.redirect().toRoute('auth.login')
+    }
+
+    /**
+     * Finally, access the user
+     */
+    try {
+      const authUser = await faceBook.user()
+
+      console.log(authUser)
+
+      /**
+       * Making the user logged in
+       */
+      const user = await User.firstOrCreate(
+        { email: authUser.email! },
+        {
+          first_name: authUser.name.split(' ')[0],
+          last_name: authUser.name.split(' ')[1],
+          email: authUser.email!,
+          avatar_url: authUser.avatarUrl!,
+          social_auth: FACEBOOK,
+        }
+      )
+
+      /**
+       * Login user using the web guard
+       */
+      await auth.use('web').login(user)
+
+      session.flash({ success: 'Logged In' })
+      return response.redirect().toRoute('post.index')
+    } catch (error) {
+      console.log(error)
+      session.flash({ error: error.message })
+      return response.redirect().toRoute('auth.login')
     }
   }
 }

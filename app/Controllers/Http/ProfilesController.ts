@@ -10,7 +10,7 @@ export default class ProfilesController {
   /**
    * @description load all the posts for the user and profile
    */
-  public async index({ session, response, view, params }: HttpContextContract) {
+  public async show({ session, response, view, params }: HttpContextContract) {
     let { email } = params
 
     try {

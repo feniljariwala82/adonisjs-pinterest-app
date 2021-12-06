@@ -27,7 +27,8 @@
     "@adonisjs/shield",
     "@adonisjs/lucid",
     "@adonisjs/auth",
-    "@adonisjs/bouncer"
+    "@adonisjs/bouncer",
+    "@adonisjs/ally"
   ],
   "metaFiles": [
     {

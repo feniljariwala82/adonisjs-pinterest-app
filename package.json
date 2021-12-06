@@ -30,6 +30,7 @@
     "youch-terminal": "^1.1.1"
   },
   "dependencies": {
+    "@adonisjs/ally": "^4.1.1",
     "@adonisjs/auth": "^8.0.10",
     "@adonisjs/bouncer": "^2.2.5",
     "@adonisjs/core": "^5.3.0",

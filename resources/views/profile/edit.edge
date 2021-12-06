@@ -84,6 +84,7 @@
         </div>
 
         {{--  email  --}}
+        @if(!user.social_auth)
         <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
           <div class="form-floating mb-3">
             <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com"
@@ -91,14 +92,17 @@
             <label for="floatingInput">Email address</label>
           </div>
         </div>
+        @endif
 
         {{--  password  --}}
+        @if(!user.social_auth)
         <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
           <div class="form-floating mb-3">
             <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
             <label for="floatingPassword">Password</label>
           </div>
         </div>
+        @endif
 
         {{--  buttons  --}}
         <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6 mt-2">
@@ -150,8 +154,10 @@
 
       formData.append('firstName', $('#firstName').val())
       formData.append('lastName', $('#lastName').val())
-      formData.append('email', $('#email').val())
-      formData.append('password', $('#password').val())
+      if ({{!user.social_auth}}) {
+        formData.append('email', $('#email').val())
+        formData.append('password', $('#password').val())
+      }
 
       $.ajax({
           url: "{{ route('profile.update', {id: auth.user.id }, { qs: { _method:'PUT' }}) }}",
