@@ -1,13 +1,11 @@
-import Application from '@ioc:Adonis/Core/Application'
+import Drive from '@ioc:Adonis/Core/Drive'
 import { cuid } from '@ioc:Adonis/Core/Helpers'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Post from 'App/Models/Post'
 import ErrorService from 'App/Services/ErrorService'
 import PostStoreValidator from 'App/Validators/PostStoreValidator'
 import PostUpdateValidator from 'App/Validators/PostUpdateValidator'
-import fs from 'fs'
 import path from 'path'
-import Drive from '@ioc:Adonis/Core/Drive'
 
 export default class PostsController {
   /**
@@ -20,8 +18,9 @@ export default class PostsController {
     }
 
     try {
-      let user = await Post.getAllByUser(auth.user.id)
-      return view.render('post/index', { posts: user?.posts })
+      const user = await Post.getAllByUser(auth.user.id)
+      const html = await view.render('post/index', { posts: user?.posts })
+      return html
     } catch (error) {
       console.error(error)
       session.flash({ error })
@@ -33,7 +32,8 @@ export default class PostsController {
    * @description to display post create form
    */
   public async create({ view }: HttpContextContract) {
-    return view.render('post/create')
+    const html = await view.render('post/create')
+    return html
   }
 
   /**
@@ -44,10 +44,8 @@ export default class PostsController {
       return response.status(400).json('Unauthorized')
     }
 
-    // validate data
-    // let payload: any
     try {
-      let payload = await request.validate(PostStoreValidator)
+      const payload = await request.validate(PostStoreValidator)
 
       // moving file to the uploads folder
       await payload.postImage.moveToDisk(
@@ -57,8 +55,10 @@ export default class PostsController {
         },
         'local'
       )
-      let imgName = payload.postImage.fileName
-      let imgUrl = await Drive.getUrl(path.join(auth.user.id.toString(), imgName!))
+
+      // caching image name and image url
+      const imgName = payload.postImage.fileName
+      const imgUrl = await Drive.getUrl(path.join(auth.user.id.toString(), imgName!))
 
       // creating a post
       let result: string = ''
@@ -82,7 +82,7 @@ export default class PostsController {
     } catch (error) {
       console.log(error.messages.errors)
       // errors made by form validator
-      let errorMessages = ErrorService.filterMessages(error)
+      const errorMessages = ErrorService.filterMessages(error)
       return response.status(400).json(errorMessages ? errorMessages : error)
     }
   }
@@ -91,12 +91,13 @@ export default class PostsController {
    * @description show particular post
    */
   public async show({ params, view, session, response }: HttpContextContract) {
-    let { id } = params
+    const { id } = params
 
     // fetching particular post
     try {
-      let post = await Post.getPostById(id)
-      return view.render('post/show', { post })
+      const post = await Post.getPostById(id)
+      const html = await view.render('post/show', { post })
+      return html
     } catch (error) {
       console.error(error)
       session.flash({ error })
@@ -108,11 +109,11 @@ export default class PostsController {
    * @description edit particular post
    */
   public async edit({ params, view, session, response, bouncer }: HttpContextContract) {
-    let { id } = params
+    const { id } = params
 
     // fetching particular post
     try {
-      let post = await Post.getPostById(id)
+      const post = await Post.getPostById(id)
 
       // checking authorization
       try {
@@ -122,7 +123,8 @@ export default class PostsController {
         return response.redirect().back()
       }
 
-      return view.render('post/edit', { post })
+      const html = await view.render('post/edit', { post })
+      return html
     } catch (error) {
       console.error(error)
       session.flash({ error })
@@ -134,7 +136,7 @@ export default class PostsController {
    * @description update particular post
    */
   public async update({ params, response, request, bouncer, auth }: HttpContextContract) {
-    let { id } = params
+    const { id } = params
 
     if (!auth.user) {
       return response.status(400).json('Unauthorized')
@@ -142,7 +144,7 @@ export default class PostsController {
 
     // validate data
     try {
-      let payload = await request.validate(PostUpdateValidator)
+      const payload = await request.validate(PostUpdateValidator)
 
       // checking post available or not
       let post: Post
@@ -185,7 +187,7 @@ export default class PostsController {
 
       // updating post data
       try {
-        let result = await Post.update({
+        const result = await Post.update({
           id,
           title: payload.title,
           description: payload.description,
@@ -201,7 +203,7 @@ export default class PostsController {
     } catch (error) {
       console.log(error.messages.errors)
       // errors made by form validator
-      let errorMessages = ErrorService.filterMessages(error)
+      const errorMessages = ErrorService.filterMessages(error)
       return response.status(400).json(errorMessages ? errorMessages : error)
     }
   }
@@ -210,10 +212,10 @@ export default class PostsController {
    * @description delete particular post
    */
   public async destroy({ params, session, response, bouncer }: HttpContextContract) {
-    let { id } = params
+    const { id } = params
 
     try {
-      let post = await Post.getPostById(id)
+      const post = await Post.getPostById(id)
 
       // checking authorization
       try {
@@ -226,13 +228,24 @@ export default class PostsController {
       /**
        * Removing image
        */
-      await Drive.delete(path.join(post.user_id.toString(), post.image_name))
+      try {
+        await Drive.delete(path.join(post.user_id.toString(), post.image_name))
+      } catch (error) {
+        console.error(error)
+        session.flash({ error: error.message })
+        return response.redirect().back()
+      }
 
       // deleting
-      await post.delete()
-
-      session.flash({ success: 'Post deleted' })
-      return response.redirect().toRoute('post.index')
+      try {
+        await post.delete()
+        session.flash({ success: 'Post deleted' })
+        return response.redirect().toRoute('post.index')
+      } catch (error) {
+        console.error(error)
+        session.flash({ error: error.message })
+        return response.redirect().back()
+      }
     } catch (error) {
       console.error(error)
       session.flash({ error })

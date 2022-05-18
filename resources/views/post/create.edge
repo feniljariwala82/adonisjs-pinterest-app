@@ -36,14 +36,23 @@
             {{--  alert will be appended here  --}}
           </div>
 
-          {{--  title  --}}
+          {{--  title input field starts --}}
           <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
             <div class="form-floating mb-3">
-              <input type="text" class="form-control" id="titleInput" name="title" placeholder="create song"
-                value="{{ flashMessages.get('title', '') }}" required>
+              <input type="text" class="form-control {{ flashMessages.has('errors.title') && 'is-invalid' }}"
+                id="titleInput" name="title" placeholder="create song" value="{{ flashMessages.get('title', '') }}"
+                required>
               <label for="floatingInput">Post Title</label>
+              {{--  title error starts --}}
+              @if(flashMessages.has('errors.title'))
+              <p class="fs-6 text-danger mb-0" id="titleError">
+                {{ flashMessages.get('errors.title') }}
+              </p>
+              @endif
+              {{--  title error ends --}}
             </div>
           </div>
+          {{--  title input field ends --}}
 
           {{--  description  --}}
           <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
@@ -52,6 +61,13 @@
                 name="description" value="{{ flashMessages.get('description', '') }}" style="height: 100px"
                 required></textarea>
               <label for="floatingTextarea2">Post Description</label>
+              {{--  description error starts --}}
+              @if(flashMessages.has('errors.description'))
+              <p class="fs-6 text-danger mb-0" id="descriptionError">
+                {{ flashMessages.get('errors.description') }}
+              </p>
+              @endif
+              {{--  description error ends --}}
             </div>
           </div>
 
@@ -59,8 +75,15 @@
           <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
             <div class="form-floating mb-3">
               <div class="input-group mb-3">
-                <label class="input-group-text" for="inputGroupFile01">Upload</label>
                 <input type="file" class="form-control" id="postImage" name="postImage">
+                <label class="input-group-text" for="inputGroupFile01">Upload</label>
+                {{--  postImage error starts --}}
+                @if(flashMessages.has('errors.postImage'))
+                <p class="fs-6 text-danger mb-0" id="postImageError">
+                  {{ flashMessages.get('errors.postImage') }}
+                </p>
+                @endif
+                {{--  postImage error ends --}}
               </div>
             </div>
           </div>
@@ -73,6 +96,14 @@
                   {{--  input  --}}
                   <input type="text" class="form-control" id="tagInput" placeholder="create tag">
                   <label for="floatingInput">Post tag</label>
+
+                  {{--  tags error starts --}}
+                  @if(flashMessages.has('errors.tags'))
+                  <p class="fs-6 text-danger mb-0" id="tagsError">
+                    {{ flashMessages.get('errors.tags') }}
+                  </p>
+                  @endif
+                  {{--  tags error ends --}}
                 </div>
               </div>
 
@@ -101,7 +132,7 @@
 
 </div>
 
-<script type="module">
+<script>
   $(document).ready(function () {
     let index = 0
     let tags = []
@@ -162,7 +193,7 @@
       var fileName = e.target.files[0].name;
 
       var reader = new FileReader();
-      reader.onload = function (e) {
+      reader.onload = (e) => {
         // get loaded data and render thumbnail.
         $("#upImage")
           .css('display', 'block')
@@ -187,9 +218,11 @@
     /**
      * submit form using ajax
      */
-    $('#submit').on('click', function (event) {
+    $('#submit').on('click', async (event) => {
       event.preventDefault()
-      var that = this;
+
+      // starting spinner
+      spinner.startLoading()
 
       formData.append('title', $('#titleInput').val())
       formData.append('description', $('#descriptionInput').val())
@@ -200,7 +233,9 @@
       }
 
       // sending the request
-      $.ajax({
+
+      try {
+        const success = await $.ajax({
           url: "{{ route('post.store') }}",
           method: 'POST',
           data: formData,
@@ -212,17 +247,18 @@
             'X-XSRF-TOKEN': helper.getCookie('XSRF-TOKEN'),
           },
         })
-        .done((success) => {
-          console.log('Success')
-          window.location.href = "{{ route('post.index') }}"
-        })
-        .fail((error) => {
-          /**
-           * On error resetting form data for data duplication, 
-           */
-          formData = new FormData()
-          toast.error(error.responseText)
-        })
+
+        console.log('Success')
+        window.location.href = "{{ route('post.index') }}"
+      } catch (error) {
+        /**
+         * On error resetting form data for data duplication, 
+         */
+        formData = new FormData()
+        toast.error(error.responseText)
+      } finally {
+        spinner.stopLoading()
+      }
     })
   })
 

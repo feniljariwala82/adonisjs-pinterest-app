@@ -1,10 +1,10 @@
+import Application from '@ioc:Adonis/Core/Application'
 import Hash from '@ioc:Adonis/Core/Hash'
-import { BaseModel, beforeSave, column, hasMany, HasMany, computed } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, beforeSave, column, hasMany, HasMany } from '@ioc:Adonis/Lucid/Orm'
 import Post from 'App/Models/Post'
+import fs from 'fs'
 import { DateTime } from 'luxon'
 import path from 'path'
-import Application from '@ioc:Adonis/Core/Application'
-import fs from 'fs'
 
 type CreateUser = {
   firstName: string
@@ -65,7 +65,7 @@ export default class User extends BaseModel {
   //   }
   // }
 
-  // before saving lower casing all names
+  // before saving lower casing all column values
   @beforeSave()
   public static async beforeSave(user: User) {
     user.first_name = user.first_name.toLocaleLowerCase().trim()
@@ -88,7 +88,7 @@ export default class User extends BaseModel {
    */
   public static async getAll(id: number) {
     try {
-      let results = await this.query().where('id', id).preload('posts').first()
+      const results = await this.query().where('id', id).preload('posts').first()
       return Promise.resolve(results)
     } catch (error) {
       console.error(error)
@@ -104,7 +104,7 @@ export default class User extends BaseModel {
   public static async createUser(user: CreateUser) {
     // checking if user exists or not
     try {
-      let exists = await this.findBy('email', user.email)
+      const exists = await this.findBy('email', user.email)
       if (exists) return Promise.reject('User already exists')
     } catch (error) {
       console.error(error)
@@ -134,8 +134,6 @@ export default class User extends BaseModel {
    */
   public static async update(id: number, updateData: UpdateUser, imageName?: string) {
     const { firstName, lastName, email, password } = updateData
-
-    console.log(updateData)
 
     // checking whether the user exists or not
     let user: User
@@ -171,8 +169,7 @@ export default class User extends BaseModel {
 
     // saving user data
     try {
-      let some = await user.save()
-      console.log(some)
+      await user.save()
       return Promise.resolve('User updated')
     } catch (error) {
       console.error(error)

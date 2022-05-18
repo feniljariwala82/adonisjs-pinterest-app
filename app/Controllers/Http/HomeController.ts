@@ -7,8 +7,9 @@ export default class HomeController {
    */
   public async index({ view, session, response }: HttpContextContract) {
     try {
-      let posts = await Post.getAll()
-      return view.render('welcome', { posts })
+      const posts = await Post.getAll()
+      const html = await view.render('welcome', { posts })
+      return html
     } catch (error) {
       console.error(error)
       session.flash({ error })

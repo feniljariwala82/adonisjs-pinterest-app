@@ -38,3 +38,34 @@ $font-family-sans-serif: IBM Plex Sans, sans-serif,
   'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji' !default;
 
 @import '../../node_modules/bootstrap/scss/bootstrap.scss';
+
+// custom css classes goes here
+/* (A) FULL SCREEN WRAPPER */
+#spinner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  transition: opacity 0.2s;
+}
+
+/* (B) CENTER LOADING SPINNER */
+#spinner {
+  #spinner-border {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+  }
+
+  // by default hiding spinner
+  visibility: hidden;
+  opacity: 0;
+
+  &.show {
+    visibility: visible;
+    opacity: 1;
+  }
+}

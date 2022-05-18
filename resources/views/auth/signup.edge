@@ -4,7 +4,7 @@
 @section('content')
 
 <div class="container mb-5 mt-5">
-  <form action="{{ route('auth.signup') }}" method="POST">
+  <form action="{{ route('auth.signup') }}" method="POST" id="signupForm">
     {{ csrfField() }}
 
     <h4 class="mb-4 fs-4 fw-bold text-center">Sign Up</h4>
@@ -15,83 +15,92 @@
       {{--  first name  --}}
       <div class="col-12 col-md-5">
         <div class="form-floating mb-3">
-          <input type="text" class="form-control" id="firstName" name="firstName" placeholder="John"
-            value="{{ flashMessages.get('firstName', '') }}" required>
+          <input type="text" class="form-control {{ flashMessages.has('errors.firstName') && 'is-invalid' }}"
+            id="firstName" name="firstName" placeholder="John" value="{{ flashMessages.get('firstName', '') }}"
+            required>
           <label for="floatingInput">First Name</label>
-          <p class="fs-6 text-danger mb-0" id="firstNameError" style="display:none;">
+          {{--  fname error starts --}}
+          @if(flashMessages.has('errors.firstName'))
+          <p class="fs-6 text-danger mb-0" id="firstNameError">
             {{ flashMessages.get('errors.firstName') }}
           </p>
+          @endif
+          {{--  fname error ends --}}
         </div>
       </div>
-      {{--  fname error  --}}
-      @if(flashMessages.has('errors.firstName'))
-      <script type="module">
-        $('#firstName').addClass('is-invalid')
-        $('#firstNameError').css({'display':'inline-block'})
-      </script>
-      @endif
+
+
 
       {{--  last name  --}}
       <div class="col-12 col-md-5">
         <div class="form-floating mb-3">
-          <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Dou"
-            value="{{ flashMessages.get('lastName', '') }}" required>
+          <input type="text" class="form-control {{ flashMessages.has('errors.lastName') && 'is-invalid' }}"
+            id="lastName" name="lastName" placeholder="Dou" value="{{ flashMessages.get('lastName', '') }}" required>
           <label for="floatingInput">Last Name</label>
-          <p class="fs-6 text-danger mb-0" id="lastNameError" style="display:none;">
+          {{--  last name error starts --}}
+          @if(flashMessages.has('errors.lastName'))
+          <p class="fs-6 text-danger mb-0" id="lastNameError">
             {{ flashMessages.get('errors.lastName') }}
           </p>
+          @endif
+          {{--  last name error ends --}}
         </div>
       </div>
-      {{--  last name error  --}}
-      @if(flashMessages.has('errors.lastName'))
-      <script type="module">
-        $('#lastName').addClass('is-invalid')
-        $('#lastNameError').css({'display':'inline-block'})
-      </script>
-      @endif
+
+
 
       {{--  email  --}}
       <div class="col-12 col-md-5">
         <div class="form-floating mb-3">
-          <input type="email" class="form-control" id="emailInput" name="email" placeholder="name@example.com"
-            value="{{ flashMessages.get('email', '') }}" required>
+          <input type="email" class="form-control {{ flashMessages.has('errors.email') && 'is-invalid' }}"
+            id="emailInput" name="email" placeholder="name@example.com" value="{{ flashMessages.get('email', '') }}"
+            required>
           <label for="floatingInput">Email address</label>
-          <p class="fs-6 text-danger mb-0" id="emailError" style="display:none;">
+          {{--  email error starts --}}
+          @if(flashMessages.has('errors.email'))
+          <p class="fs-6 text-danger mb-0" id="emailError">
             {{ flashMessages.get('errors.email') }}
           </p>
+          @endif
+          {{--  email error ends --}}
         </div>
       </div>
-      {{--  email error  --}}
-      @if(flashMessages.has('errors.email'))
-      <script type="module">
-        $('#emailInput').addClass('is-invalid')
-        $('#emailError').css({'display':'inline-block'})
-      </script>
-      @endif
+
 
       {{--  password  --}}
       <div class="col-12 col-md-5">
         <div class="form-floating mb-3">
-          <input type="password" class="form-control" id="passwordInput" name="password" placeholder="Password"
-            required>
+          <input type="password" class="form-control {{ flashMessages.has('errors.password') && 'is-invalid' }} "
+            id="passwordInput" name="password" placeholder="Password" required>
           <label for="floatingPassword">Password</label>
-          <p class="fs-6 text-danger mb-0" id="passwordError" style="display:none;">
+          {{--  password error starts --}}
+          @if(flashMessages.has('errors.password'))
+          <p class="fs-6 text-danger mb-0" id="passwordError">
             {{ flashMessages.get('errors.password') }}
           </p>
+          @endif
+          {{--  password error ends --}}
         </div>
       </div>
-      {{--  password error  --}}
-      @if(flashMessages.has('errors.password'))
-      <script type="module">
-        $('#passwordInput').addClass('is-invalid')
-        $('#passwordError').css({'display':'inline-block'})
-      </script>
-      @endif
 
       {{--  buttons  --}}
       <div class="col-12 col-md-5">
         <button type="submit" class="btn btn-secondary">Signup</button>
         <a class="btn btn-primary" href="{{ route('auth.login') }}">Login</a>
+
+        <script>
+          $(document).ready(() => {
+            const $form = $("#signupForm")
+            /**
+             * on form submitted, starting loader
+             */
+            $form.on('submit', () => {
+              // starting spinner
+              spinner.startLoading()
+            });
+          })
+
+        </script>
       </div>
     </div>
   </form>

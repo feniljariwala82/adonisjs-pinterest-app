@@ -13,16 +13,17 @@ export default class AuthController {
   public async login({ request, response, session, auth, view }: HttpContextContract) {
     switch (request.method()) {
       case 'POST':
-        let postSchema = schema.create({
+        const postSchema = schema.create({
           email: schema.string({ trim: true }, [rules.required(), rules.email()]),
           password: schema.string({ trim: true }, [rules.required(), rules.minLength(8)]),
         })
 
         // validating data
-        let payload = await request.validate({
+        const payload = await request.validate({
           schema: postSchema,
           messages: {
             'required': 'The {{ field }} is required',
+            'email.email': 'Email should be a valid email id',
             'password.minLength': 'Password must be 8 characters long',
           },
         })
@@ -30,7 +31,7 @@ export default class AuthController {
         // fetching user
         let user: User
         try {
-          user = await User.findByOrFail('email', payload.email.toLocaleLowerCase().trim())
+          user = await User.findByOrFail('email', payload.email.toLocaleLowerCase())
         } catch (error) {
           console.error(error)
           session.flash({ error: 'User not found' })
@@ -55,7 +56,8 @@ export default class AuthController {
         }
 
       default:
-        return view.render('auth/login')
+        const html = await view.render('auth/login')
+        return html
     }
   }
 
@@ -65,15 +67,19 @@ export default class AuthController {
   public async signup({ request, response, session, view }: HttpContextContract) {
     switch (request.method()) {
       case 'POST':
-        let postSchema = schema.create({
+        const postSchema = schema.create({
           firstName: schema.string({ trim: true }, [rules.required(), rules.alpha()]),
           lastName: schema.string({ trim: true }, [rules.required(), rules.alpha()]),
           email: schema.string({ trim: true }, [rules.required(), rules.email()]),
-          password: schema.string({ trim: true }, [rules.required(), rules.minLength(8)]),
+          password: schema.string({ trim: true }, [
+            rules.required(),
+            rules.minLength(8),
+            rules.regex(/^(?=.{8,}$)(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[0-9])(?=.*?\W).*$/),
+          ]),
         })
 
         // validating data
-        let payload = await request.validate({
+        const payload = await request.validate({
           schema: postSchema,
           messages: {
             'required': 'The {{ field }} is required',
@@ -81,12 +87,14 @@ export default class AuthController {
             'lastName.alpha': 'The last name must contain alphabets only',
             'email.email': 'Please provide valid email',
             'password.minLength': 'Password must be 8 characters long',
+            'password.regex':
+              'Password must be 8 characters long, with one uppercase, lowercase, number and special character',
           },
         })
 
         // creating new user
         try {
-          let result = await User.createUser(payload)
+          const result = await User.createUser(payload)
           session.flash({ success: result })
           return response.redirect().toRoute('home')
         } catch (error) {
@@ -95,7 +103,8 @@ export default class AuthController {
         }
 
       default:
-        return view.render('auth/signup')
+        const html = await view.render('auth/signup')
+        return html
     }
   }
 
@@ -159,16 +168,23 @@ export default class AuthController {
       /**
        * Making the user logged in
        */
-      const user = await User.firstOrCreate(
-        { email: authUser.email! },
-        {
-          first_name: authUser.original.given_name,
-          last_name: authUser.original.family_name,
-          email: authUser.email!,
-          avatar_url: authUser.avatarUrl!,
-          social_auth: GOOGLE,
-        }
-      )
+      let user: User
+      try {
+        user = await User.firstOrCreate(
+          { email: authUser.email! },
+          {
+            first_name: authUser.original.given_name,
+            last_name: authUser.original.family_name,
+            email: authUser.email!,
+            avatar_url: authUser.avatarUrl!,
+            social_auth: GOOGLE,
+          }
+        )
+      } catch (error) {
+        console.log(error)
+        session.flash({ error: error.message })
+        return response.redirect().toRoute('auth.login')
+      }
 
       /**
        * Login user using the web guard
@@ -234,16 +250,23 @@ export default class AuthController {
       /**
        * Making the user logged in
        */
-      const user = await User.firstOrCreate(
-        { email: authUser.email! },
-        {
-          first_name: authUser.name.split(' ')[0],
-          last_name: authUser.name.split(' ')[1],
-          email: authUser.email!,
-          avatar_url: authUser.avatarUrl!,
-          social_auth: GITHUB,
-        }
-      )
+      let user: User
+      try {
+        user = await User.firstOrCreate(
+          { email: authUser.email! },
+          {
+            first_name: authUser.name.split(' ')[0],
+            last_name: authUser.name.split(' ')[1],
+            email: authUser.email!,
+            avatar_url: authUser.avatarUrl!,
+            social_auth: GITHUB,
+          }
+        )
+      } catch (error) {
+        console.log(error)
+        session.flash({ error: error.message })
+        return response.redirect().toRoute('auth.login')
+      }
 
       /**
        * Login user using the web guard
@@ -302,21 +325,26 @@ export default class AuthController {
     try {
       const authUser = await faceBook.user()
 
-      console.log(authUser)
-
       /**
        * Making the user logged in
        */
-      const user = await User.firstOrCreate(
-        { email: authUser.email! },
-        {
-          first_name: authUser.name.split(' ')[0],
-          last_name: authUser.name.split(' ')[1],
-          email: authUser.email!,
-          avatar_url: authUser.avatarUrl!,
-          social_auth: FACEBOOK,
-        }
-      )
+      let user: User
+      try {
+        user = await User.firstOrCreate(
+          { email: authUser.email! },
+          {
+            first_name: authUser.name.split(' ')[0],
+            last_name: authUser.name.split(' ')[1],
+            email: authUser.email!,
+            avatar_url: authUser.avatarUrl!,
+            social_auth: FACEBOOK,
+          }
+        )
+      } catch (error) {
+        console.log(error)
+        session.flash({ error: error.message })
+        return response.redirect().toRoute('auth.login')
+      }
 
       /**
        * Login user using the web guard
