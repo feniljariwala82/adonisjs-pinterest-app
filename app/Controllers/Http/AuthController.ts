@@ -5,6 +5,7 @@ import User from 'App/Models/User'
 import constants from 'Config/constants'
 
 const { GITHUB, GOOGLE, FACEBOOK } = constants.allyType
+const { passwordRegex } = constants.regex
 
 export default class AuthController {
   /**
@@ -74,7 +75,7 @@ export default class AuthController {
           password: schema.string({ trim: true }, [
             rules.required(),
             rules.minLength(8),
-            rules.regex(/^(?=.{8,}$)(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[0-9])(?=.*?\W).*$/),
+            rules.regex(passwordRegex),
           ]),
         })
 

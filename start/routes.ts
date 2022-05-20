@@ -50,8 +50,14 @@ Route.resource('/post', 'PostsController').middleware({
   destroy: 'auth',
 })
 
-Route.group(() => {
-  Route.get('/profile/:email', 'ProfilesController.show').as('index').middleware(['silentAuth'])
-  Route.get('/profile/:id/edit', 'ProfilesController.edit').as('edit').middleware(['auth'])
-  Route.put('/profile/:id', 'ProfilesController.update').as('update').middleware(['auth'])
-}).as('profile')
+Route.resource('/profile', 'ProfilesController').only(['show', 'edit', 'update']).middleware({
+  show: 'silentAuth',
+  edit: 'auth',
+  update: 'auth',
+})
+
+// Route.group(() => {
+//   Route.get('/profile/:email', 'ProfilesController.show').as('show').middleware(['silentAuth'])
+//   Route.get('/profile/:id/edit', 'ProfilesController.edit').as('edit').middleware(['auth'])
+//   Route.put('/profile/:id', 'ProfilesController.update').as('update').middleware(['auth'])
+// }).as('profile')

@@ -1,10 +1,19 @@
 import Application from '@ioc:Adonis/Core/Application'
 import Hash from '@ioc:Adonis/Core/Hash'
-import { BaseModel, beforeSave, column, hasMany, HasMany } from '@ioc:Adonis/Lucid/Orm'
+import {
+  BaseModel,
+  beforeSave,
+  column,
+  hasMany,
+  HasMany,
+  hasOne,
+  HasOne,
+} from '@ioc:Adonis/Lucid/Orm'
 import Post from 'App/Models/Post'
 import fs from 'fs'
 import { DateTime } from 'luxon'
 import path from 'path'
+import Profile from 'App/Models/Profile'
 
 type CreateUser = {
   firstName: string
@@ -33,24 +42,6 @@ export default class User extends BaseModel {
   @column()
   public rememberMeToken?: string
 
-  @column()
-  public first_name: string
-
-  @column()
-  public last_name: string
-
-  @column()
-  public full_name: string
-
-  @column()
-  public avatar_name: string
-
-  @column()
-  public avatar_url: string
-
-  @column()
-  public social_auth: string
-
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 
@@ -68,11 +59,7 @@ export default class User extends BaseModel {
   // before saving lower casing all column values
   @beforeSave()
   public static async beforeSave(user: User) {
-    user.first_name = user.first_name.toLocaleLowerCase().trim()
-    user.last_name = user.last_name.toLocaleLowerCase().trim()
     user.email = user.email.toLocaleLowerCase().trim()
-    user.full_name =
-      user.first_name.toLocaleLowerCase().trim() + ' ' + user.last_name.toLocaleLowerCase().trim()
   }
 
   // user has many posts
@@ -80,6 +67,10 @@ export default class User extends BaseModel {
     foreignKey: 'user_id', // defaults to userId
   })
   public posts: HasMany<typeof Post>
+
+  // user has one profile
+  @hasOne(() => Profile, { foreignKey: 'userId', localKey: 'id' })
+  public profile: HasOne<typeof Profile>
 
   /**
    * @description Get all user's post
@@ -112,17 +103,28 @@ export default class User extends BaseModel {
     }
 
     // creating user
+    let createdUser: User
     try {
-      await this.create({
+      createdUser = await this.create({
         email: user.email,
         password: await Hash.make(user.password.trim()),
-        first_name: user.firstName,
-        last_name: user.lastName,
+      })
+    } catch (error) {
+      console.error(error)
+      return Promise.reject(error.message)
+    }
+
+    // creating profile
+    try {
+      await Profile.storeProfile({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        userId: createdUser.id,
       })
       return Promise.resolve('User created')
     } catch (error) {
       console.error(error)
-      return Promise.reject(error.message)
+      return Promise.reject(error)
     }
   }
 
@@ -138,7 +140,7 @@ export default class User extends BaseModel {
     // checking whether the user exists or not
     let user: User
     try {
-      user = await User.findOrFail(id)
+      user = await User.query().where('id', id).preload('profile').firstOrFail()
     } catch (error) {
       console.error(error)
       return Promise.reject('User not found')
@@ -147,7 +149,7 @@ export default class User extends BaseModel {
     /**
      * Removing old image if new image provided
      */
-    if (imageName && user.avatar_url) {
+    if (imageName && user.profile.avatar_url) {
       fs.unlink(Application.tmpPath(path.join('/uploads/' + user.avatar_url)), (error) => {
         if (error) {
           console.error(error)
