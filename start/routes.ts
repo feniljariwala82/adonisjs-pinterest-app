@@ -14,15 +14,15 @@ Route.group(() => {
     .middleware('isGuest')
   Route.get('/logout', 'AuthController.logout').as('logout').middleware(['auth'])
 
-  // google social auth
+  // google social OAuth2.0
   Route.get('/google/redirect', 'AuthController.googleRedirect').as('google.redirect')
   Route.get('/google/callback', 'AuthController.googleCallback').as('google.callback')
 
-  // github social auth
+  // github social OAuth2.0
   Route.get('/github/redirect', 'AuthController.githubRedirect').as('github.redirect')
   Route.get('/github/callback', 'AuthController.githubCallback').as('github.callback')
 
-  // facebook social auth
+  // facebook social OAuth2.0
   Route.get('/fb/redirect', 'AuthController.fbRedirect').as('fb.redirect')
   Route.get('/fb/callback', 'AuthController.fbCallback').as('fb.callback')
 })

@@ -1,13 +1,11 @@
-import Application from '@ioc:Adonis/Core/Application'
+import Drive from '@ioc:Adonis/Core/Drive'
 import { cuid } from '@ioc:Adonis/Core/Helpers'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Post from 'App/Models/Post'
 import ErrorService from 'App/Services/ErrorService'
 import PostStoreValidator from 'App/Validators/PostStoreValidator'
 import PostUpdateValidator from 'App/Validators/PostUpdateValidator'
-import fs from 'fs'
 import path from 'path'
-import Drive from '@ioc:Adonis/Core/Drive'
 
 export default class PostsController {
   /**
@@ -49,7 +47,7 @@ export default class PostsController {
     try {
       let payload = await request.validate(PostStoreValidator)
 
-      // moving file to the uploads folder
+      // moving file to the uploads folder/aws s3
       await payload.postImage.moveToDisk(
         auth.user.id.toString(),
         {
