@@ -1,10 +1,8 @@
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { rules, schema, validator } from '@ioc:Adonis/Core/Validator'
+import { rules, schema } from '@ioc:Adonis/Core/Validator'
 
 export default class CreatePostValidator {
   constructor(protected ctx: HttpContextContract) {}
-
-  public reporter = validator.reporters.api
 
   public schema = schema.create({
     title: schema.string({ trim: true }, [rules.required(), rules.maxLength(50)]),

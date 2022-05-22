@@ -7,6 +7,10 @@
   <title>{{ title }}</title>
   @entryPointStyles('app')
   @entryPointScripts('app')
+
+  {{--  jquery  --}}
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+    integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 </head>
 
 <body>
@@ -25,12 +29,14 @@
   {{--  static toasts  --}}
   @include('partials/staticToasts')
 
+  {{--  spinner  --}}
+  @include('partials/spinner')
+
   {{--  footer  --}}
   {{--  @include('partials/footer')  --}}
 
   {{--  scripts  --}}
   @!section('scripts')
-
 
   <script type="module">
     $(document).ready(function () {
@@ -40,7 +46,6 @@
     })
   </script>
 
-  {{--  scripts  --}}
 </body>
 
 </html>

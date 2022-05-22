@@ -1,11 +1,9 @@
 import {
-  BaseModel,
-  BelongsTo,
+  BaseModel, beforeSave, BelongsTo,
   belongsTo,
   column,
   hasMany,
-  HasMany,
-  beforeSave,
+  HasMany
 } from '@ioc:Adonis/Lucid/Orm'
 import PostTag from 'App/Models/PostTag'
 import Tag from 'App/Models/Tag'

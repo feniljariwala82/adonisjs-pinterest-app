@@ -115,8 +115,8 @@
   </div>
 </div>
 
-<script type="module">
-  $(document).ready(function () {
+<script>
+  $(document).ready(() => {
 
     let postTags = JSON.parse('{{{ JSON.stringify(tags) }}}')
 
@@ -206,7 +206,7 @@
       var fileName = e.target.files[0].name;
 
       var reader = new FileReader();
-      reader.onload = function (e) {
+      reader.onload = (e) => {
         // get loaded data and render thumbnail.
         $("#imgContainer").css('display', 'block');
         $("#upImage").attr('src', e.target.result);
@@ -231,12 +231,14 @@
     /**
      * submit form using ajax
      */
-    $('#submit').on('click', function (event) {
+    $('#submit').on('click', async (event) => {
       event.preventDefault()
+
+      spinner.startLoading()
 
       formData.append('title', $('#titleInput').val())
       formData.append('description', $('#descriptionInput').val())
-      if(file) {
+      if (file) {
         formData.append('postImage', file)
       }
 
@@ -245,7 +247,8 @@
       }
 
       // sending the request
-      $.ajax({
+      try {
+        const success = await $.ajax({
           url: "{{ route('post.update', {id: post.id }) }}",
           method: 'PUT',
           data: formData,
@@ -257,18 +260,19 @@
             'X-XSRF-TOKEN': helper.getCookie('XSRF-TOKEN'),
           },
         })
-        .done((success) => {
-          console.log('Success')
-          window.location.href = "{{ route('post.index') }}"
-        })
-        .fail((error) => {
-          console.log(error)
-          /**
-           * On error resetting form data for data duplication, 
-           */
-          formData = new FormData()
-          toast.error(error.responseText)
-        })
+
+        console.log('Success')
+        window.location.href = "{{ route('post.index') }}"
+      } catch (error) {
+        console.log(error)
+        /**
+         * On error resetting form data for data duplication, 
+         */
+        formData = new FormData()
+        toast.error(error.responseText)
+      } finally {
+        spinner.stopLoading()
+      }
     })
   })
 

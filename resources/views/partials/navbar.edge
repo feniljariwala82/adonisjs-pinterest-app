@@ -23,7 +23,7 @@
           </a>
           <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
             <li>
-              <a class="dropdown-item" href="{{ route('profile.index', { email: auth.user.email }) }}">Profile</a>
+              <a class="dropdown-item" href="{{ route('profile.show', { email: auth.user.email }) }}">Profile</a>
             </li>
             <li>
               <a class="dropdown-item" href="{{ route('auth.logout') }}">Logout</a>

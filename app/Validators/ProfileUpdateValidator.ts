@@ -1,16 +1,20 @@
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { rules, schema, validator } from '@ioc:Adonis/Core/Validator'
+import { rules, schema } from '@ioc:Adonis/Core/Validator'
+import constants from 'Config/constants'
+
+const { passwordRegex } = constants.regex
 
 export default class ProfileUpdateValidator {
   constructor(protected ctx: HttpContextContract) {}
-
-  public reporter = validator.reporters.api
 
   public schema = schema.create({
     firstName: schema.string.optional({ trim: true }, [rules.alpha()]),
     lastName: schema.string.optional({ trim: true }, [rules.alpha()]),
     email: schema.string.optional({ trim: true }, [rules.email()]),
-    password: schema.string.optional({ trim: true }, [rules.minLength(8)]),
+    password: schema.string.optional({ trim: true }, [
+      rules.minLength(8),
+      rules.regex(passwordRegex),
+    ]),
     avatarUrl: schema.file.optional({
       size: '2mb',
       extnames: ['jpg', 'png'],

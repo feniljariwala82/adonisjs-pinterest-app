@@ -56,7 +56,7 @@
         {{--  user details  --}}
         <h4 class="mt-4">
           Created By
-          <a class="text-primary text-capitalize" href="{{ route('profile.index', { email: post.user.email }) }}">
+          <a class="text-primary text-capitalize" href="{{ route('profile.show', { email: post.user.email }) }}">
             {{ post.user.first_name +' ' +  post.user.last_name }}
           </a>
         </h4>
