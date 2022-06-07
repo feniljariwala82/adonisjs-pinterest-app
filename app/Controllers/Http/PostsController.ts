@@ -47,7 +47,7 @@ export default class PostsController {
     try {
       const payload = await request.validate(PostStoreValidator)
 
-      // moving file to the uploads folder
+      // moving file to the uploads folder/aws s3
       await payload.postImage.moveToDisk(
         auth.user.id.toString(),
         {
