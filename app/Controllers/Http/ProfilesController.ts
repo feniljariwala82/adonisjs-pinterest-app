@@ -1,23 +1,23 @@
 import Application from '@ioc:Adonis/Core/Application'
+import { cuid } from '@ioc:Adonis/Core/Helpers'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import Post from 'App/Models/Post'
+import Profile from 'App/Models/Profile'
 import User from 'App/Models/User'
 import ErrorService from 'App/Services/ErrorService'
 import ProfileUpdateValidator from 'App/Validators/ProfileUpdateValidator'
-import { cuid } from '@ioc:Adonis/Core/Helpers'
 
 export default class ProfilesController {
   /**
    * @description load all the posts for the user and profile
    */
   public async show({ session, response, view, params }: HttpContextContract) {
-    let { email } = params
+    const { id } = params
 
     try {
-      let user = await Post.getAllByUserEmail(email)
-      return view.render('profile/index', { user: user.serialize() })
+      const profile = await Profile.getProfile(id)
+      const html = await view.render('profile/index', { profile })
+      return html
     } catch (error) {
-      console.error(error)
       session.flash({ error })
       return response.redirect().back()
     }
@@ -27,11 +27,12 @@ export default class ProfilesController {
    * @description open edit profile form
    */
   public async edit({ session, response, view, params }: HttpContextContract) {
-    let { id } = params
+    const { id } = params
 
     try {
-      let user = await User.findOrFail(id)
-      return view.render('profile/edit', { user: user.serialize() })
+      const profile = await Profile.getProfile(id)
+      const html = await view.render('profile/edit', { profile })
+      return html
     } catch (error) {
       console.error(error)
       session.flash({ error })
@@ -43,7 +44,7 @@ export default class ProfilesController {
    * @description update profile form
    */
   public async update({ response, request, params, auth }: HttpContextContract) {
-    let { id } = params
+    const { id } = params
 
     if (!auth.user || auth.user.id !== parseInt(id)) {
       return response.status(400).json('Not authorized to perform this action')

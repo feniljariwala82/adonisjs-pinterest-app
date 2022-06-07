@@ -37,21 +37,19 @@ Route.group(() => {
   .as('auth')
 
 // home page
-Route.get('/', 'HomeController.index').as('home').middleware(['silentAuth'])
+Route.get('/', 'HomeController.index').as('home')
 
 // posts routes
 Route.resource('/post', 'PostsController').middleware({
   create: 'auth',
   store: 'auth',
   index: 'auth',
-  show: 'silentAuth',
   edit: 'auth',
   update: 'auth',
   destroy: 'auth',
 })
 
 Route.resource('/profile', 'ProfilesController').only(['show', 'edit', 'update']).middleware({
-  show: 'silentAuth',
   edit: 'auth',
   update: 'auth',
 })

@@ -51,7 +51,7 @@ export default class AuthController {
           session.flash({ success: 'Logged in' })
           return response.redirect().toRoute('home')
         } catch (error) {
-          console.error(error.message)
+          console.error(error)
           session.flash({ error: error.message })
           return response.redirect().back()
         }

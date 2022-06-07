@@ -1,4 +1,5 @@
-import { BaseModel, column, beforeSave } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, beforeSave, belongsTo, BelongsTo, column } from '@ioc:Adonis/Lucid/Orm'
+import User from 'App/Models/User'
 import { DateTime } from 'luxon'
 
 interface StoreProfileType {
@@ -39,14 +40,15 @@ export default class Profile extends BaseModel {
   public updatedAt: DateTime
 
   @beforeSave()
-  public static async beforeSave(profile: Profile) {
-    profile.firstName = profile.firstName.toLocaleLowerCase().trim()
-    profile.lastName = profile.lastName.toLocaleLowerCase().trim()
+  public static beforeSave = async (profile: Profile) => {
+    profile.firstName = profile.firstName.toLocaleLowerCase()
+    profile.lastName = profile.lastName.toLocaleLowerCase()
     profile.fullName =
-      profile.firstName.toLocaleLowerCase().trim() +
-      ' ' +
-      profile.lastName.toLocaleLowerCase().trim()
+      profile.firstName.toLocaleLowerCase() + ' ' + profile.lastName.toLocaleLowerCase()
   }
+
+  @belongsTo(() => User, { localKey: 'id', foreignKey: 'userId' })
+  public user: BelongsTo<typeof User>
 
   /**
    * @description stores profile into profile table
@@ -61,6 +63,22 @@ export default class Profile extends BaseModel {
         userId: data.userId,
       })
       return Promise.resolve('Profile created')
+    } catch (error) {
+      console.error(error)
+      return Promise.reject(error.message)
+    }
+  }
+
+  /**
+   * @description get profile by its id
+   * @param profileId id of profile
+   * @returns Promise
+   */
+  public static getProfile = async (profileId: number) => {
+    try {
+      const profile = await this.query().where('id', profileId).preload('user').firstOrFail()
+      profile.user.load('posts')
+      return Promise.resolve(profile)
     } catch (error) {
       console.error(error)
       return Promise.reject(error.message)

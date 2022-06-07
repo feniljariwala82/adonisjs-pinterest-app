@@ -10,7 +10,7 @@
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
       <li class="breadcrumb-item" aria-current="page"><a
-          href="{{ route('profile.show', {email: auth.user.email}) }}">Profile</a></li>
+          href="{{ route('profile.show', { id: profile.id } ) }}">Profile</a></li>
       <li class="breadcrumb-item active" aria-current="page">Edit</li>
     </ol>
   </nav>
@@ -27,8 +27,8 @@
         {{--  original image preview  --}}
         <div class="col-6">
           <p class="text-center fs-4">Previous Image</p>
-          @if(user.avatar_url)
-          <img src="{{ user.imageUrl }}" class="img-thumbnail" alt="Image" id="avatarUrl">
+          @if(profile.avatarUrl)
+          <img src="{{ profile.imageUrl }}" class="img-thumbnail" alt="Image" id="avatarUrl">
           @else
           <p class="fs-5 text-capitalize text-center" id="imgMessage">Image not available!</p>
           @endif
@@ -59,7 +59,7 @@
         <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
           <div class="form-floating mb-3">
             <input type="text" class="form-control" id="firstName" name="firstName" placeholder="enter first name"
-              value="{{ user.first_name }}" required>
+              value="{{ profile.firstName }}" required>
             <label for="floatingInput">First Name</label>
           </div>
         </div>
@@ -68,7 +68,7 @@
         <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
           <div class="form-floating mb-3">
             <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Dou"
-              value="{{ user.last_name }}" required>
+              value="{{ profile.lastName }}" required>
             <label for="floatingInput">Last Name</label>
           </div>
         </div>
@@ -84,18 +84,16 @@
         </div>
 
         {{--  email  --}}
-        @if(!user.social_auth)
+        @if(!profile.socialAuth)
         <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
           <div class="form-floating mb-3">
             <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com"
-              value="{{ user.email }}" required>
+              value="{{ profile.user.email }}" required>
             <label for="floatingInput">Email address</label>
           </div>
         </div>
-        @endif
 
         {{--  password  --}}
-        @if(!user.social_auth)
         <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
           <div class="form-floating mb-3">
             <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
@@ -114,14 +112,16 @@
   </div>
 </div>
 
-<script type="module">
-  $(document).ready(function () {
-    // let file
-    $('input[type="file"]').change(function (e) {
-      var fileName = e.target.files[0].name;
+<script>
+  $(document).ready(() => {
+    let file
+    let formData;
+    formData = new FormData()
 
-      var reader = new FileReader();
-      reader.onload = function (e) {
+    $('input[type="file"]').change((e) => {
+      const fileName = e.target.files[0].name;
+      const reader = new FileReader();
+      reader.onload = (e) => {
         // get loaded data and render thumbnail.
         $("#upImage")
           .css('display', 'block')
@@ -129,18 +129,13 @@
         $('#imgMessage').css('display', 'none')
       };
       // read the image file as a data URL.
-      file = this.files[0]
-      reader.readAsDataURL(this.files[0]);
+      file = e.target.files[0]
+      reader.readAsDataURL(file);
     });
 
-    let formData;
-    formData = new FormData()
-
     // on image change adding image to the file object, that we can use in form data
-    let file
-    $('#postImage').on('change', function (event) {
+    $('#postImage').on('change', (event) => {
       event.preventDefault()
-      file = this.files[0]
       $('#imgContainer').css('display', 'inline-block')
       formData.append('avatarUrl', file)
       console.log(formData.get('avatarUrl'))
@@ -149,43 +144,39 @@
     /**
      * submit form using ajax
      */
-    $('#submit').on('click', function (event) {
+    $('#submit').on('click', async (event) => {
       event.preventDefault()
-
       formData.append('firstName', $('#firstName').val())
       formData.append('lastName', $('#lastName').val())
-      if ({{!user.social_auth}}) {
+      if ("{{!profile.socialAuth}}") {
         formData.append('email', $('#email').val())
         formData.append('password', $('#password').val())
       }
 
-      $.ajax({
-          url: "{{ route('profile.update', {id: auth.user.id }, { qs: { _method:'PUT' }}) }}",
+      try {
+        const succcess = await $.ajax({
+          url: "{{ route('profile.update', {id: profile.id }, { qs: { _method:'PUT' }}) }}",
           method: 'POST',
           data: formData,
           cache: false,
           contentType: false,
           processData: false,
-          timeout: 60000,
           headers: {
             'X-XSRF-TOKEN': helper.getCookie('XSRF-TOKEN'),
           },
-        }).done((success) => {
-          console.log('Success')
-          window.location.href = "{{ route('auth.logout') }}"
         })
-        .fail((error) => {
-          /**
-           * On error resetting form data for stopping data duplication,
-           */
-          formData = new FormData()
-             $("#upImage")
-             .css('display', 'block')
-             .attr('src','')
+        window.location.href = "{{ route('auth.logout') }}"
+      } catch (error) {
+        /**
+         * On error resetting form data for stopping data duplication,
+         */
+        formData = new FormData()
+        $("#upImage")
+          .css('display', 'block')
+          .attr('src', '')
         $('#imgContainer').css('display', 'none')
-
-          toast.error(error.responseText)
-        })
+        toast.error(error.responseText)
+      }
     })
   })
 

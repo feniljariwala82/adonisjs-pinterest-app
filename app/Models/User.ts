@@ -59,7 +59,7 @@ export default class User extends BaseModel {
   // before saving lower casing all column values
   @beforeSave()
   public static async beforeSave(user: User) {
-    user.email = user.email.toLocaleLowerCase().trim()
+    user.email = user.email.toLocaleLowerCase()
   }
 
   // user has many posts

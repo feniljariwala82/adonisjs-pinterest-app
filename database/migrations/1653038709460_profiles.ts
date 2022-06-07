@@ -8,7 +8,7 @@ export default class Profiles extends BaseSchema {
 
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.increments('id')
+      table.increments('id').primary()
       table.string('first_name', 50).notNullable()
       table.string('last_name', 50).notNullable()
       table.string('full_name', 180).notNullable()
