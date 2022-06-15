@@ -10,10 +10,10 @@ import {
   HasOne,
 } from '@ioc:Adonis/Lucid/Orm'
 import Post from 'App/Models/Post'
+import Profile from 'App/Models/Profile'
 import fs from 'fs'
 import { DateTime } from 'luxon'
 import path from 'path'
-import Profile from 'App/Models/Profile'
 
 type CreateUser = {
   firstName: string
@@ -116,7 +116,7 @@ export default class User extends BaseModel {
 
     // creating profile
     try {
-      await Profile.storeProfile({
+      await Profile.updateOrCreateProfile({
         firstName: user.firstName,
         lastName: user.lastName,
         userId: createdUser.id,
@@ -126,6 +126,65 @@ export default class User extends BaseModel {
       console.error(error)
       return Promise.reject(error)
     }
+  }
+
+  /**
+   * @description method to create user with social auth provider
+   * @param email query string email
+   * @param profile profile data
+   * @returns Promise
+   */
+  public static createSocialAuthUser = async (email: string, profile: StoreProfileType) => {
+    /**
+     * 1. fetching whether user exists or not
+     * 2. checking if user exists with different auth or not
+     */
+    let user: User | null
+    try {
+      user = await this.query().where('email', email).first()
+    } catch (error) {
+      console.error(error)
+      return Promise.reject(error.message)
+    }
+
+    if (user) {
+      // if user exists then checking social auth
+      await user.load('profile')
+
+      /**
+       * if user already exists with different social auth, then
+       * throwing error
+       */
+      if (user.profile.socialAuth !== profile.socialAuth) {
+        const error = 'User already exists with this email'
+        console.error(error)
+        return Promise.reject(error)
+      }
+    } else {
+      // if does not exists then creating new one
+      try {
+        user = await this.create({ email })
+      } catch (error) {
+        console.error(error)
+        return Promise.reject(error.message)
+      }
+    }
+
+    // creating profile
+    try {
+      await Profile.updateOrCreateProfile({
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        avatarUrl: profile.avatarUrl ? profile.avatarUrl : undefined,
+        socialAuth: profile.socialAuth,
+        userId: user.id,
+      })
+    } catch (error) {
+      console.error(error)
+      return Promise.reject(error.message)
+    }
+
+    return Promise.resolve(user)
   }
 
   /**

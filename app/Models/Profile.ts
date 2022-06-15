@@ -2,12 +2,6 @@ import { BaseModel, beforeSave, belongsTo, BelongsTo, column } from '@ioc:Adonis
 import User from 'App/Models/User'
 import { DateTime } from 'luxon'
 
-interface StoreProfileType {
-  firstName: string
-  lastName: string
-  userId: number
-}
-
 export default class Profile extends BaseModel {
   @column({ isPrimary: true })
   public id: number
@@ -55,12 +49,22 @@ export default class Profile extends BaseModel {
    * @param data profile data
    * @returns Promise
    */
-  public static storeProfile = async (data: StoreProfileType) => {
+  public static updateOrCreateProfile = async (data: StoreProfileType) => {
+    let queryString = {}
+    // @ts-ignore
+    if (typeof parseInt(data.userId) === 'number') {
+      queryString = { userId: data.userId }
+    } else {
+      queryString = { userId: null }
+    }
+
     try {
-      await this.create({
+      await this.updateOrCreate(queryString, {
         firstName: data.firstName,
         lastName: data.lastName,
         userId: data.userId,
+        avatarUrl: data.avatarUrl && data.avatarUrl,
+        socialAuth: data.socialAuth && data.socialAuth,
       })
       return Promise.resolve('Profile created')
     } catch (error) {

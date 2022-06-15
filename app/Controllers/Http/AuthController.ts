@@ -3,8 +3,9 @@ import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { rules, schema } from '@ioc:Adonis/Core/Validator'
 import User from 'App/Models/User'
 import constants from 'Config/constants'
+import Profile from 'App/Models/Profile'
 
-const { GITHUB, GOOGLE, FACEBOOK } = constants.allyType
+const { GITHUB, GOOGLE, FACEBOOK, LOCAL } = constants.allyType
 const { passwordRegex } = constants.regex
 
 export default class AuthController {
@@ -166,34 +167,31 @@ export default class AuthController {
     try {
       const authUser = await google.user()
 
-      /**
-       * Making the user logged in
-       */
+      // creating or validating user
       let user: User
       try {
-        user = await User.firstOrCreate(
-          { email: authUser.email! },
-          {
-            first_name: authUser.original.given_name,
-            last_name: authUser.original.family_name,
-            email: authUser.email!,
-            avatar_url: authUser.avatarUrl!,
-            social_auth: GOOGLE,
-          }
-        )
+        user = await User.createSocialAuthUser(authUser.email!, {
+          firstName: authUser.original.given_name,
+          lastName: authUser.original.family_name,
+          avatarUrl: authUser.avatarUrl ? authUser.avatarUrl : undefined,
+          socialAuth: GOOGLE,
+        })
       } catch (error) {
-        console.log(error)
-        session.flash({ error: error.message })
+        session.flash({ error })
         return response.redirect().toRoute('auth.login')
       }
 
       /**
        * Login user using the web guard
        */
-      await auth.use('web').login(user)
-
-      session.flash({ success: 'Logged In' })
-      return response.redirect().toRoute('post.index')
+      try {
+        await auth.use('web').login(user)
+        session.flash({ success: 'Logged In' })
+        return response.redirect().toRoute('post.index')
+      } catch (error) {
+        session.flash({ error: error.message })
+        return response.redirect().toRoute('auth.login')
+      }
     } catch (error) {
       session.flash({ error: error.message })
       return response.redirect().toRoute('auth.login')

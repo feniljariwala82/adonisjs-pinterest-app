@@ -1,7 +1,7 @@
 import BaseSchema from '@ioc:Adonis/Lucid/Schema'
 import constants from 'Config/constants'
 
-const { GITHUB, GOOGLE, FACEBOOK } = constants.allyType
+const { GITHUB, GOOGLE, FACEBOOK, LOCAL } = constants.allyType
 
 export default class Profiles extends BaseSchema {
   protected tableName = 'profiles'
@@ -14,7 +14,7 @@ export default class Profiles extends BaseSchema {
       table.string('full_name', 180).notNullable()
       table.string('avatar_name').nullable()
       table.string('avatar_url').nullable()
-      table.enum('social_auth', [GITHUB, GOOGLE, FACEBOOK]).nullable().defaultTo(null)
+      table.enum('social_auth', [GITHUB, GOOGLE, FACEBOOK, LOCAL]).nullable().defaultTo(LOCAL)
       table.integer('user_id').unsigned().references('users.id').notNullable().onDelete('CASCADE')
       table.timestamp('created_at', { useTz: true })
       table.timestamp('updated_at', { useTz: true })
