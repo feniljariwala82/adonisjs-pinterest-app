@@ -5,6 +5,7 @@ import Profile from 'App/Models/Profile'
 import User from 'App/Models/User'
 import ErrorService from 'App/Services/ErrorService'
 import ProfileUpdateValidator from 'App/Validators/ProfileUpdateValidator'
+import path from 'path'
 
 export default class ProfilesController {
   /**
@@ -14,8 +15,8 @@ export default class ProfilesController {
     const { id } = params
 
     try {
-      const profile = await Profile.getProfile(id)
-      const html = await view.render('profile/index', { profile })
+      const user = await User.getUserById(id)
+      const html = await view.render('profile/show', { user })
       return html
     } catch (error) {
       session.flash({ error })
@@ -30,8 +31,8 @@ export default class ProfilesController {
     const { id } = params
 
     try {
-      const profile = await Profile.getProfile(id)
-      const html = await view.render('profile/edit', { profile })
+      const user = await User.getUserById(id)
+      const html = await view.render('profile/edit', { user })
       return html
     } catch (error) {
       console.error(error)
@@ -46,37 +47,40 @@ export default class ProfilesController {
   public async update({ response, request, params, auth }: HttpContextContract) {
     const { id } = params
 
-    if (!auth.user || auth.user.id !== parseInt(id)) {
-      return response.status(400).json('Not authorized to perform this action')
-    }
-
     // validate data
-    let payload: any
     try {
-      payload = await request.validate(ProfileUpdateValidator)
+      const payload = await request.validate(ProfileUpdateValidator)
+
+      // image url
+      let imageUrl: string = ''
+
+      if (payload.avatarUrl) {
+        // new image name
+        const imageName = cuid() + '.' + payload.avatarUrl.extname
+
+        // path at which profile image should be moved
+        const uploadPath = path.join(Application.tmpPath('uploads'), auth.user!.id.toString())
+
+        await payload.avatarUrl.move(uploadPath, {
+          // renaming the file
+          name: imageName,
+        })
+
+        // updating payload avatar url path
+        imageUrl = path.join(uploadPath, imageName)
+      }
+
+      // updating user data
+      try {
+        const result = await User.update(id, payload, imageUrl)
+        return response.status(200).json(result)
+      } catch (error) {
+        return response.status(400).json(error)
+      }
     } catch (error) {
-      console.log(error.messages.errors)
       // errors made by form validator
-      let errorMessages = ErrorService.filterMessages(error)
+      const errorMessages = ErrorService.filterMessages(error)
       return response.status(400).json(errorMessages ? errorMessages : error)
-    }
-
-    // moving file to the uploads folder
-    let imgName: string = ''
-    if (payload.avatarUrl) {
-      await payload.avatarUrl.move(Application.tmpPath('uploads'), {
-        // renaming the file
-        name: cuid() + '.' + payload.avatarUrl.extname,
-      })
-      imgName = payload.avatarUrl.fileName
-    }
-
-    // updating user data
-    try {
-      let result = await User.update(id, payload, imgName)
-      return response.status(200).json(result)
-    } catch (error) {
-      return response.status(400).json(error)
     }
   }
 }

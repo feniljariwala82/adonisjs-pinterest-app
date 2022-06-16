@@ -12,6 +12,7 @@ import {
 import Post from 'App/Models/Post'
 import Profile from 'App/Models/Profile'
 import fs from 'fs'
+import { unlink } from 'fs/promises'
 import { DateTime } from 'luxon'
 import path from 'path'
 
@@ -25,7 +26,6 @@ type CreateUser = {
 type UpdateUser = {
   firstName?: string
   lastName?: string
-  email?: string
   password?: string
 }
 
@@ -77,7 +77,7 @@ export default class User extends BaseModel {
    * @param id id of the user
    * @returns Promise
    */
-  public static async getAll(id: number) {
+  public static getAll = async (id: number) => {
     try {
       const results = await this.query().where('id', id).preload('posts').first()
       return Promise.resolve(results)
@@ -92,7 +92,7 @@ export default class User extends BaseModel {
    * @param user User data
    * @returns Promise
    */
-  public static async createUser(user: CreateUser) {
+  public static createUser = async (user: CreateUser) => {
     // checking if user exists or not
     try {
       const exists = await this.findBy('email', user.email)
@@ -168,20 +168,20 @@ export default class User extends BaseModel {
         console.error(error)
         return Promise.reject(error.message)
       }
-    }
 
-    // creating profile
-    try {
-      await Profile.updateOrCreateProfile({
-        firstName: profile.firstName,
-        lastName: profile.lastName,
-        avatarUrl: profile.avatarUrl ? profile.avatarUrl : undefined,
-        socialAuth: profile.socialAuth,
-        userId: user.id,
-      })
-    } catch (error) {
-      console.error(error)
-      return Promise.reject(error.message)
+      // creating profile
+      try {
+        await Profile.updateOrCreateProfile({
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          avatarUrl: profile.avatarUrl ? profile.avatarUrl : undefined,
+          socialAuth: profile.socialAuth,
+          userId: user.id,
+        })
+      } catch (error) {
+        console.error(error)
+        return Promise.reject(error.message)
+      }
     }
 
     return Promise.resolve(user)
@@ -193,8 +193,8 @@ export default class User extends BaseModel {
    * @param updateData new data
    * @returns Promise
    */
-  public static async update(id: number, updateData: UpdateUser, imageName?: string) {
-    const { firstName, lastName, email, password } = updateData
+  public static update = async (id: number, updateData: UpdateUser, imageUrl?: string) => {
+    const { firstName, lastName, password } = updateData
 
     // checking whether the user exists or not
     let user: User
@@ -206,22 +206,16 @@ export default class User extends BaseModel {
     }
 
     /**
-     * Removing old image if new image provided
+     * Removing an old image if a new image provided
      */
-    if (imageName && user.profile.avatar_url) {
-      fs.unlink(Application.tmpPath(path.join('/uploads/' + user.avatar_url)), (error) => {
-        if (error) {
-          console.error(error)
-          return Promise.reject(error.message)
-        }
-      })
+    if (imageUrl && user.profile.avatarUrl && user.profile.socialAuth === 'local') {
+      try {
+        await unlink(user.profile.avatarUrl)
+      } catch (error) {
+        console.error(error)
+        return Promise.reject(error.message)
+      }
     }
-
-    // updating the user data
-    user.first_name = firstName ? firstName : user.first_name
-    user.last_name = lastName ? lastName : user.last_name
-    user.email = email ? email : user.email
-    user.avatar_url = imageName ? imageName : user.avatar_url
 
     // for password
     if (password) {
@@ -231,7 +225,40 @@ export default class User extends BaseModel {
     // saving user data
     try {
       await user.save()
-      return Promise.resolve('User updated')
+    } catch (error) {
+      console.error(error)
+      return Promise.reject(error.message)
+    }
+
+    // updating profile
+    try {
+      const profile = await Profile.getProfileById(user.profile.id)
+
+      if (firstName) {
+        profile.firstName = firstName
+      }
+      if (lastName) {
+        profile.lastName = lastName
+      }
+      if (imageUrl) {
+        profile.avatarUrl = imageUrl
+      }
+    } catch (error) {
+      console.error(error)
+      return Promise.reject(error)
+    }
+
+    return Promise.resolve('User updated')
+  }
+
+  public static getUserById = async (id: number) => {
+    try {
+      const user = await this.query()
+        .where('id', id)
+        .preload('profile')
+        .preload('posts')
+        .firstOrFail()
+      return Promise.resolve(user)
     } catch (error) {
       console.error(error)
       return Promise.reject(error.message)

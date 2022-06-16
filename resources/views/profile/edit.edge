@@ -10,7 +10,7 @@
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
       <li class="breadcrumb-item" aria-current="page"><a
-          href="{{ route('profile.show', { id: profile.id } ) }}">Profile</a></li>
+          href="{{ route('profile.show', { id: user.profile.id } ) }}">Profile</a></li>
       <li class="breadcrumb-item active" aria-current="page">Edit</li>
     </ol>
   </nav>
@@ -27,8 +27,8 @@
         {{--  original image preview  --}}
         <div class="col-6">
           <p class="text-center fs-4">Previous Image</p>
-          @if(profile.avatarUrl)
-          <img src="{{ profile.imageUrl }}" class="img-thumbnail" alt="Image" id="avatarUrl">
+          @if(user.profile.avatarUrl)
+          <img src="{{ user.profile.avatarUrl }}" class="img-thumbnail" alt="Image" id="avatarUrl">
           @else
           <p class="fs-5 text-capitalize text-center" id="imgMessage">Image not available!</p>
           @endif
@@ -46,7 +46,7 @@
     <div class="col-12 col-md-6 mt-4 mt-sm-0">
 
       <div class="d-flex flex-column justify-content-center align-items-center">
-        <div class="col align-items-start">
+        <div class="col">
           <h4 class="mb-4 fs-4 fw-bold">Edit Profile</h4>
         </div>
 
@@ -55,59 +55,54 @@
           {{--  alert will be appended here  --}}
         </div>
 
-        {{--  first name  --}}
         <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+          {{--  first name starts  --}}
           <div class="form-floating mb-3">
             <input type="text" class="form-control" id="firstName" name="firstName" placeholder="enter first name"
-              value="{{ profile.firstName }}" required>
+              value="{{ user.profile.firstName }}" required>
             <label for="floatingInput">First Name</label>
           </div>
-        </div>
+          {{--  first name ends  --}}
 
-        {{--  last name  --}}
-        <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+          {{--  last name starts  --}}
           <div class="form-floating mb-3">
             <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Dou"
-              value="{{ profile.lastName }}" required>
+              value="{{ user.profile.lastName }}" required>
             <label for="floatingInput">Last Name</label>
           </div>
-        </div>
+          {{--  last name ends  --}}
 
-        {{--  profile image  --}}
-        <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+          {{--  profile image starts  --}}
           <div class="form-floating mb-3">
             <div class="input-group mb-3">
               <label class="input-group-text" for="inputGroupFile01">Profile Image</label>
               <input type="file" class="form-control" id="postImage" name="postImage">
             </div>
           </div>
-        </div>
+          {{--  profile image ends  --}}
 
-        {{--  email  --}}
-        @if(!profile.socialAuth)
-        <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+          @if(!user.profile.socialAuth)
+          {{--  email starts  --}}
           <div class="form-floating mb-3">
             <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com"
-              value="{{ profile.user.email }}" required>
+              value="{{ user.email }}" required>
             <label for="floatingInput">Email address</label>
           </div>
-        </div>
+          {{--  email ends  --}}
 
-        {{--  password  --}}
-        <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+          {{--  password starts  --}}
           <div class="form-floating mb-3">
             <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
             <label for="floatingPassword">Password</label>
           </div>
-        </div>
-        @endif
+          {{--  password ends  --}}
+          @endif
 
-        {{--  buttons  --}}
-        <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6 mt-2">
+          {{--  buttons  --}}
           <button class="btn btn-primary" id="submit">Update Profile</button>
         </div>
-      </div>
 
+      </div>
     </div>
   </div>
 </div>
@@ -137,8 +132,6 @@
     $('#postImage').on('change', (event) => {
       event.preventDefault()
       $('#imgContainer').css('display', 'inline-block')
-      formData.append('avatarUrl', file)
-      console.log(formData.get('avatarUrl'))
     })
 
     /**
@@ -148,14 +141,15 @@
       event.preventDefault()
       formData.append('firstName', $('#firstName').val())
       formData.append('lastName', $('#lastName').val())
-      if ("{{!profile.socialAuth}}") {
+      formData.append('avatarUrl', file)
+      if ("{{!user.profile.socialAuth}}") {
         formData.append('email', $('#email').val())
         formData.append('password', $('#password').val())
       }
 
       try {
         const succcess = await $.ajax({
-          url: "{{ route('profile.update', {id: profile.id }, { qs: { _method:'PUT' }}) }}",
+          url: "{{ route('profile.update', {id: user.profile.id }, { qs: { _method:'PUT' }}) }}",
           method: 'POST',
           data: formData,
           cache: false,

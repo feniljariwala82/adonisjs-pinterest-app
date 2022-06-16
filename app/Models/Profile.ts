@@ -16,9 +16,6 @@ export default class Profile extends BaseModel {
   public fullName: string
 
   @column()
-  public avatarName: string
-
-  @column()
   public avatarUrl: string
 
   @column()
@@ -73,15 +70,9 @@ export default class Profile extends BaseModel {
     }
   }
 
-  /**
-   * @description get profile by its id
-   * @param profileId id of profile
-   * @returns Promise
-   */
-  public static getProfile = async (profileId: number) => {
+  public static getProfileById = async (id: number) => {
     try {
-      const profile = await this.query().where('id', profileId).preload('user').firstOrFail()
-      profile.user.load('posts')
+      const profile = await this.findOrFail(id)
       return Promise.resolve(profile)
     } catch (error) {
       console.error(error)

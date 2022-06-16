@@ -10,7 +10,6 @@ export default class ProfileUpdateValidator {
   public schema = schema.create({
     firstName: schema.string.optional({ trim: true }, [rules.alpha()]),
     lastName: schema.string.optional({ trim: true }, [rules.alpha()]),
-    email: schema.string.optional({ trim: true }, [rules.email()]),
     password: schema.string.optional({ trim: true }, [
       rules.minLength(8),
       rules.regex(passwordRegex),
