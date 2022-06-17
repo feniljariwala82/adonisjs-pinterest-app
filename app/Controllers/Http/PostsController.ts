@@ -12,13 +12,8 @@ export default class PostsController {
    * @description load all the posts for the user
    */
   public async index({ auth, session, response, view }: HttpContextContract) {
-    if (!auth.user) {
-      session.flash({ error: 'Please login to continue' })
-      return response.redirect().back()
-    }
-
     try {
-      const user = await Post.getAllByUser(auth.user.id)
+      const user = await Post.getAllByUser(auth.user!.id)
       const html = await view.render('post/index', { posts: user?.posts })
       return html
     } catch (error) {
@@ -39,48 +34,41 @@ export default class PostsController {
   /**
    * @description to save new post
    */
-  public async store({ request, session, response, auth }: HttpContextContract) {
-    if (!auth.user) {
-      return response.status(400).json('Unauthorized')
-    }
-
+  public async store({ request, response, auth }: HttpContextContract) {
     try {
       const payload = await request.validate(PostStoreValidator)
 
-      // moving file to the uploads folder/aws s3
-      await payload.postImage.moveToDisk(
-        auth.user.id.toString(),
-        {
-          name: cuid() + '.' + payload.postImage.extname,
-        },
-        'local'
-      )
+      const imageName = `${cuid()}.${payload.postImage.extname}`
 
-      // caching image name and image url
-      const imgName = payload.postImage.fileName
-      const imgUrl = await Drive.getUrl(path.join(auth.user.id.toString(), imgName!))
+      // moving file to the uploads folder/aws s3
+      try {
+        await payload.postImage.moveToDisk(auth.user!.id.toString(), { name: imageName }, 'local')
+      } catch (error) {
+        console.error(error)
+        return response.status(400).json(error.message)
+      }
+
+      const fileName = path.join(auth.user!.id.toString(), imageName)
+
+      const imgUrl = await Drive.getUrl(fileName)
 
       // creating a post
       let result: string = ''
       try {
         result = await Post.store({
-          id: auth.user.id,
+          id: auth.user!.id,
           title: payload.title,
           description: payload.description,
-          imgName: imgName!,
           imgUrl,
           tags: payload.tags,
         })
       } catch (error) {
         console.error(error)
-        session.flash({ error })
-        return response.redirect().back()
+        return response.status(400).json(error)
       }
 
-      session.flash({ success: result })
-      return response.redirect().toRoute('post.index')
+      return response.status(200).json('Post created')
     } catch (error) {
-      console.log(error.messages.errors)
       // errors made by form validator
       const errorMessages = ErrorService.filterMessages(error)
       return response.status(400).json(errorMessages ? errorMessages : error)

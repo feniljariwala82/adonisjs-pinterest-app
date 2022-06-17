@@ -43,50 +43,27 @@
                 id="titleInput" name="title" placeholder="create song" value="{{ flashMessages.get('title', '') }}"
                 required>
               <label for="floatingInput">Post Title</label>
-              {{--  title error starts --}}
-              @if(flashMessages.has('errors.title'))
-              <p class="fs-6 text-danger mb-0" id="titleError">
-                {{ flashMessages.get('errors.title') }}
-              </p>
-              @endif
-              {{--  title error ends --}}
             </div>
-          </div>
-          {{--  title input field ends --}}
 
-          {{--  description  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+            {{--  description starts  --}}
             <div class="form-floating mb-3">
               <textarea class="form-control" placeholder="Leave a description here" id="descriptionInput"
                 name="description" value="{{ flashMessages.get('description', '') }}" style="height: 100px"
                 required></textarea>
               <label for="floatingTextarea2">Post Description</label>
-              {{--  description error starts --}}
-              @if(flashMessages.has('errors.description'))
-              <p class="fs-6 text-danger mb-0" id="descriptionError">
-                {{ flashMessages.get('errors.description') }}
-              </p>
-              @endif
-              {{--  description error ends --}}
             </div>
-          </div>
+            {{--  description ends  --}}
 
-          {{--  postImage dropdown  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+            {{--  postImage dropdown starts  --}}
             <div class="form-floating mb-3">
               <div class="input-group mb-3">
                 <input type="file" class="form-control" id="postImage" name="postImage">
                 <label class="input-group-text" for="inputGroupFile01">Upload</label>
-                {{--  postImage error starts --}}
-                @if(flashMessages.has('errors.postImage'))
-                <p class="fs-6 text-danger mb-0" id="postImageError">
-                  {{ flashMessages.get('errors.postImage') }}
-                </p>
-                @endif
-                {{--  postImage error ends --}}
               </div>
             </div>
+            {{--  postImage dropdown ends  --}}
           </div>
+          {{--  title input field ends --}}
 
           <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
             <div class="row align-items-center">
@@ -129,7 +106,6 @@
       </form>
     </div>
   </div>
-
 </div>
 
 <script>
@@ -227,7 +203,6 @@
       formData.append('title', $('#titleInput').val())
       formData.append('description', $('#descriptionInput').val())
       formData.append('postImage', file)
-      // formData.append('_csrf', $("input[name=_csrf]").val())
       for (var i = 0; i < tags.length; i++) {
         formData.append('tags[]', tags[i]);
       }

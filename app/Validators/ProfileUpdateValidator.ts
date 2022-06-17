@@ -23,7 +23,8 @@ export default class ProfileUpdateValidator {
   public messages = {
     'firstName.alpha': 'The first name must contain alphabets only',
     'lastName.alpha': 'The last name must contain alphabets only',
-    'email.email': 'Please provide valid email',
     'password.minLength': 'Password must be 8 characters long',
+    'password.regex':
+      'Password must be 8 characters long, with one uppercase, lowercase, number and special character',
   }
 }

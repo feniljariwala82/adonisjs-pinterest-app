@@ -1,4 +1,4 @@
-import Application from '@ioc:Adonis/Core/Application'
+import Drive from '@ioc:Adonis/Core/Drive'
 import Hash from '@ioc:Adonis/Core/Hash'
 import {
   BaseModel,
@@ -11,10 +11,7 @@ import {
 } from '@ioc:Adonis/Lucid/Orm'
 import Post from 'App/Models/Post'
 import Profile from 'App/Models/Profile'
-import fs from 'fs'
-import { unlink } from 'fs/promises'
 import { DateTime } from 'luxon'
-import path from 'path'
 
 type CreateUser = {
   firstName: string
@@ -189,11 +186,15 @@ export default class User extends BaseModel {
 
   /**
    * @description the method to update the user profile
-   * @param id id of the user profile
-   * @param updateData new data
+   * @param data
+   * @param updateData
    * @returns Promise
    */
-  public static update = async (id: number, updateData: UpdateUser, imageUrl?: string) => {
+  public static update = async (
+    data: { id: number; imageUrl?: string; imageName?: string },
+    updateData: UpdateUser
+  ) => {
+    const { id, imageName, imageUrl } = data
     const { firstName, lastName, password } = updateData
 
     // checking whether the user exists or not
@@ -208,22 +209,22 @@ export default class User extends BaseModel {
     /**
      * Removing an old image if a new image provided
      */
-    if (imageUrl && user.profile.avatarUrl && user.profile.socialAuth === 'local') {
+    if (imageUrl && user.profile.avatarUrl && user.profile.socialAuth === 'local' && imageName) {
       try {
-        await unlink(user.profile.avatarUrl)
+        await Drive.delete(imageName)
       } catch (error) {
         console.error(error)
         return Promise.reject(error.message)
       }
     }
 
-    // for password
-    if (password) {
-      user.password = await Hash.make(password.trim())
-    }
-
     // saving user data
     try {
+      // for password
+      if (password) {
+        user.password = await Hash.make(password.trim())
+      }
+
       await user.save()
     } catch (error) {
       console.error(error)
@@ -242,6 +243,13 @@ export default class User extends BaseModel {
       }
       if (imageUrl) {
         profile.avatarUrl = imageUrl
+      }
+
+      try {
+        await profile.save()
+      } catch (error) {
+        console.error(error)
+        return Promise.reject(error.message)
       }
     } catch (error) {
       console.error(error)

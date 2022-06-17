@@ -1,9 +1,11 @@
 import {
-  BaseModel, beforeSave, BelongsTo,
+  BaseModel,
+  beforeSave,
+  BelongsTo,
   belongsTo,
   column,
   hasMany,
-  HasMany
+  HasMany,
 } from '@ioc:Adonis/Lucid/Orm'
 import PostTag from 'App/Models/PostTag'
 import Tag from 'App/Models/Tag'
@@ -15,7 +17,6 @@ type PostType = {
   title: string
   description: string
   tags: string[]
-  imgName: string
   imgUrl: string
 }
 
@@ -40,9 +41,6 @@ export default class Post extends BaseModel {
 
   @column()
   public user_id: number
-
-  @column()
-  public image_name: string
 
   @column()
   public image_url: string
@@ -156,7 +154,6 @@ export default class Post extends BaseModel {
         description: data.description.toLocaleLowerCase(),
         user_id: data.id,
         image_url: data.imgUrl,
-        image_name: data.imgName,
       })
     } catch (error) {
       console.error(error)
@@ -238,11 +235,6 @@ export default class Post extends BaseModel {
     // updating post data
     post.title = data.title
     post.description = data.description
-
-    // if image name exists then saving new image name
-    if (data.imgName) {
-      post.image_name = data.imgName
-    }
 
     // if image name exists then saving new image name
     if (data.imgUrl) {

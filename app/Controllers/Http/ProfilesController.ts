@@ -1,7 +1,6 @@
-import Application from '@ioc:Adonis/Core/Application'
+import Drive from '@ioc:Adonis/Core/Drive'
 import { cuid } from '@ioc:Adonis/Core/Helpers'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import Profile from 'App/Models/Profile'
 import User from 'App/Models/User'
 import ErrorService from 'App/Services/ErrorService'
 import ProfileUpdateValidator from 'App/Validators/ProfileUpdateValidator'
@@ -52,27 +51,38 @@ export default class ProfilesController {
       const payload = await request.validate(ProfileUpdateValidator)
 
       // image url
-      let imageUrl: string = ''
+      let url: string = ''
+      let fileName: string = ''
 
       if (payload.avatarUrl) {
         // new image name
-        const imageName = cuid() + '.' + payload.avatarUrl.extname
+        const imageName = `${cuid()}.${payload.avatarUrl.extname}`
 
         // path at which profile image should be moved
-        const uploadPath = path.join(Application.tmpPath('uploads'), auth.user!.id.toString())
+        const userDirPath = auth.user!.id.toString()
 
-        await payload.avatarUrl.move(uploadPath, {
-          // renaming the file
-          name: imageName,
-        })
+        await payload.avatarUrl.moveToDisk(
+          userDirPath,
+          {
+            // renaming the file
+            name: imageName,
+          },
+          'local'
+        )
 
         // updating payload avatar url path
-        imageUrl = path.join(uploadPath, imageName)
+        try {
+          fileName = path.join(userDirPath, imageName)
+          url = await Drive.getUrl(fileName)
+        } catch (error) {
+          console.error(error)
+          return response.status(400).json(error.message)
+        }
       }
 
       // updating user data
       try {
-        const result = await User.update(id, payload, imageUrl)
+        const result = await User.update({ id, imageUrl: url, imageName: fileName }, payload)
         return response.status(200).json(result)
       } catch (error) {
         return response.status(400).json(error)
