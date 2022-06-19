@@ -1,4 +1,3 @@
-import '@fortawesome/fontawesome-free/css/all.css'
 import { Modal, Toast } from 'bootstrap'
 import 'bootstrap/dist/js/bootstrap.esm'
 import 'masonry-layout/dist/masonry.pkgd.min.js'

@@ -42,34 +42,38 @@
 
         <div class="d-flex flex-column justify-content-center align-items-center">
 
-
-          {{--  alert container  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6" id="alertContainer">
-          </div>
-
-          {{--  title  --}}
+          {{--  alert container starts  --}}
           <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+            <div class="alert alert-dismissible fade show" role="alert" id="alertContainer" style="display:none;">
+              <p id="alertMsg"></p>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          </div>
+          {{--  alert container starts  --}}
+
+          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+            {{--  title starts  --}}
             <div class="form-floating mb-3">
               <input type="text" class="form-control" id="titleInput" name="title" placeholder="create song"
                 value="{{ post.title }}" required>
               <label for="floatingInput">Post Title</label>
             </div>
-          </div>
+            {{--  title ends  --}}
 
-          {{--  description  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+            {{--  description starts  --}}
             <div class="form-floating mb-3">
               <textarea class="form-control" placeholder="Leave a description here" id="descriptionInput"
-                name="description" style="height: 100px" required></textarea>
+                name="description" style="height: 100px" value="{{post.description}}" required></textarea>
               <label for="floatingTextarea2">Post Description</label>
             </div>
-            <script type="module">
-              $('#descriptionInput').text(JSON.parse('{{{ JSON.stringify(post.description) }}}'))
-            </script>
-          </div>
+            <script>
+              const $desc = document.getElementById('descriptionInput')
+              $desc.innerHTML = "{{ post.description }}"
 
-          {{--  postImage dropdown  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+            </script>
+            {{--  description ends  --}}
+
+            {{--  postImage dropdown starts  --}}
             <div class="form-floating mb-3">
               <div class="input-group mb-3">
                 <label class="input-group-text" for="inputGroupFile01">Upload</label>
@@ -77,10 +81,9 @@
                   value="{{ flashMessages.get('postImage', '') }}">
               </div>
             </div>
-          </div>
+            {{--  postImage dropdown ends  --}}
 
-          @set('tags', post.postTags.map((postTags) => postTags.tag))
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+            @set('tags', post.tags)
             <div class="row align-items-center">
               {{--  tags  --}}
               <div class="col-12 col-sm-10">
@@ -96,18 +99,14 @@
                 <button type="button" class="btn btn-primary" id="addTab">Add</button>
               </div>
             </div>
-          </div>
 
-          {{--  tag view  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6 mt-4">
-            <div class="p-4 border rounded" id="tabContainer">
-
+            {{--  tags container starts  --}}
+            <div class="p-4 border rounded mt-3" id="tabContainer">
             </div>
-          </div>
+            {{--  tags container ends  --}}
 
-          {{--  buttons  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6 mt-4">
-            <button class="btn btn-primary" id="submit">Update Post</button>
+            {{--  buttons  --}}
+            <button class="btn btn-primary mt-2" id="submit">Update Post</button>
           </div>
         </div>
       </form>
@@ -118,7 +117,7 @@
 <script>
   $(document).ready(() => {
 
-    let postTags = JSON.parse('{{{ JSON.stringify(tags) }}}')
+    const postTags = JSON.parse('{{{ JSON.stringify(tags) }}}')
 
     let index = 0
     let formTags = []
@@ -140,7 +139,7 @@
       // close button
       $('#' + i).on('click', function () {
         // removing from the tabs array
-        var index = formTags.indexOf($('#' + i).text())
+        const index = formTags.indexOf($('#' + i).text())
         if (index !== -1) {
           formTags.splice(index, 1)
         }
@@ -150,13 +149,12 @@
       })
     }
 
+    // alert
+    const $alert = $('#alertContainer')
+    const $alertMsg = $("#alertMsg")
     const showErrorAlert = (message) => {
-      $('#alertContainer')
-        .append('<div class="alert alert-dismissible fade show text-capitalize" role="alert" id="alert"></div>')
-      $('#alert')
-        .append(`<strong>Error </strong>${message}`)
-        .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button> ')
-        .addClass('alert-danger')
+      $alert.css('display', 'block').addClass('alert-danger')
+      $alertMsg.append(`<strong>Error </strong>${message}`)
     }
 
     $('#closeBtn').on('click', function () {
@@ -167,8 +165,8 @@
       e.preventDefault()
 
       // adding new tag into array
-      let res = /^[a-zA-Z ]+$/.test($('#tagInput').val());
-      if (res) {
+      const regexResult = /^[a-zA-Z]+$/.test($('#tagInput').val());
+      if (regexResult) {
         formTags.push($('#tagInput').val())
       } else {
         // appending error alert

@@ -3,7 +3,7 @@ import { BaseModel, column, belongsTo, BelongsTo } from '@ioc:Adonis/Lucid/Orm'
 import Post from 'App/Models/Post'
 import Tag from 'App/Models/Tag'
 
-export default class PostTag extends BaseModel {
+export default class TagPost extends BaseModel {
   @column({ isPrimary: true })
   public id: number
 
@@ -39,7 +39,7 @@ export default class PostTag extends BaseModel {
    * @param tagIds array of tag ids
    * @returns Promise
    */
-  public static async store(postId: number, tagIds: Array<number>) {
+  public static async storePostTag(postId: number, tagIds: Array<number>) {
     for (const tagId of tagIds) {
       try {
         await this.create({

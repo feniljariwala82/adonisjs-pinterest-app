@@ -30,7 +30,7 @@
           @if(user.profile.avatarUrl)
           <img src="{{ user.profile.avatarUrl }}" class="img-thumbnail" alt="Image" id="avatarUrl">
           @else
-          <p class="fs-5 text-capitalize text-center" id="imgMessage">Image not available!</p>
+          <p class="fs-5 text-capitalize text-center">Image not available!</p>
           @endif
         </div>
 
@@ -111,7 +111,6 @@
         $("#upImage")
           .css('display', 'block')
           .attr('src', e.target.result)
-        $('#imgMessage').css('display', 'none')
       };
       // read the image file as a data URL.
       file = e.target.files[0]

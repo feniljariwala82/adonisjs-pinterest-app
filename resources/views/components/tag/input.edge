@@ -1,0 +1,75 @@
+<div class="row justify-content-around align-items-center">
+  {{--  tags  --}}
+  <div class="col-12 col-sm-10">
+    <div class="form-floating">
+      {{--  input  --}}
+      <input type="hidden" id="tags">
+      <input type="text" class="form-control" id="tagInput">
+      <label for="floatingInput">Post tag</label>
+    </div>
+  </div>
+
+  {{--  Add button  --}}
+  <div class="col-12 col-sm-2 mt-2 mt-md-0">
+    <button type="button" class="btn btn-primary" id="addTab">Add</button>
+  </div>
+</div>
+
+{{--  tag view starts  --}}
+<div class="p-4 border rounded mt-4" id="tabContainer">
+
+</div>
+{{--  tag view starts  --}}
+
+<script>
+  $(document).ready(() => {
+    // tag index used when creating a new tag
+    let index = 0
+    // array of tags
+    const tags = []
+
+    $('#addTab').on('click', (e) => {
+      e.preventDefault()
+
+      const $tags = $("#tags")
+      const $input = $('#tagInput')
+      const value = $input.val().trim()
+
+      // adding new tag into array
+      const regexResult = /^[a-zA-Z]+$/.test(value);
+      if (regexResult) {
+        tags.push(value)
+        $tags.val(JSON.stringify(tags))
+      } else {
+        // appending error alert
+        alert('Tags can contain alphabets with no space only')
+        return
+      }
+
+      const i = ++index
+      $('#tabContainer').append(
+        `<span class="badge rounded-pill bg-secondary text-capitalize mt-1 ms-1 p-2" id=${i} style="cursor:pointer;"> </span>`
+      )
+
+      // assigning value to the badge
+      $('#' + i).text(value)
+
+      // remove button
+      $('#' + i).on('click', () => {
+        // removing from the tabs array
+        const index = tags.indexOf($('#' + i).text())
+        if (index !== -1) {
+          tags.splice(index, 1)
+          $tags.val(JSON.stringify(tags))
+        }
+
+        // fading tag
+        $('#' + i).addClass('fade').remove()
+      })
+
+      // resetting input text null
+      $input.val('')
+    })
+  })
+
+</script>

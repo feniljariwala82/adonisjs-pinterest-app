@@ -9,6 +9,7 @@ export default class Posts extends BaseSchema {
       table.string('title', 50).notNullable()
       table.string('description', 400).notNullable()
       table.integer('user_id').unsigned().references('users.id').onDelete('CASCADE').notNullable()
+      table.string('storage_prefix').notNullable()
       table.string('image_url').notNullable()
       table.timestamp('created_at', { useTz: true })
       table.timestamp('updated_at', { useTz: true })

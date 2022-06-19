@@ -1,0 +1,15 @@
+<span class="badge rounded-pill bg-secondary text-capitalize mt-1 ms-1 p-2" style="cursor:pointer;" id="tag_{{tagId}}">
+  {{ title }}
+  <script>
+    $(document).ready(() => {
+      const deletable = "{{deletable}}" === 'true' ? true : false
+      const $tag = $("#tag_{{tagId}}")
+      $tag.click(() => {
+        if (deletable) {
+          $tag.remove()
+        }
+      })
+    })
+
+  </script>
+</span>

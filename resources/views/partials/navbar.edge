@@ -11,9 +11,6 @@
         {{--  if condition  --}}
         @if(auth.isLoggedIn)
         <li class="nav-item">
-          <a class="nav-link active" aria-current="page" href="{{ route('post.index') }}">Posts</a>
-        </li>
-        <li class="nav-item">
           <a class="nav-link active" aria-current="page" href="{{ route('post.create') }}">Create</a>
         </li>
         <li class="nav-item dropdown">
@@ -24,6 +21,9 @@
           <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
             <li>
               <a class="dropdown-item" href="{{ route('profile.show', { id: profile.id }) }}">Profile</a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{{ route('post.index') }}">Posts</a>
             </li>
             <li>
               <a class="dropdown-item" href="{{ route('auth.logout') }}">Logout</a>

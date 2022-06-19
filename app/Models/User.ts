@@ -13,19 +13,6 @@ import Post from 'App/Models/Post'
 import Profile from 'App/Models/Profile'
 import { DateTime } from 'luxon'
 
-type CreateUser = {
-  firstName: string
-  lastName: string
-  email: string
-  password: string
-}
-
-type UpdateUser = {
-  firstName?: string
-  lastName?: string
-  password?: string
-}
-
 export default class User extends BaseModel {
   @column({ isPrimary: true })
   public id: number
@@ -264,7 +251,9 @@ export default class User extends BaseModel {
       const user = await this.query()
         .where('id', id)
         .preload('profile')
-        .preload('posts')
+        .preload('posts', (postQuery) => {
+          postQuery.orderBy('created_at', 'desc')
+        })
         .firstOrFail()
       return Promise.resolve(user)
     } catch (error) {

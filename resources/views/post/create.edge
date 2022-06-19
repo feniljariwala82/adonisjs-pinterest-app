@@ -32,8 +32,11 @@
           </div>
 
           {{--  alert container  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6" id="alertContainer">
-            {{--  alert will be appended here  --}}
+          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+            <div class="alert alert-dismissible fade show" role="alert" id="alertContainer" style="display:none;">
+              <p id="alertMsg"></p>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
           </div>
 
           {{--  title input field starts --}}
@@ -66,36 +69,7 @@
           {{--  title input field ends --}}
 
           <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
-            <div class="row align-items-center">
-              {{--  tags  --}}
-              <div class="col-12 col-sm-10">
-                <div class="form-floating">
-                  {{--  input  --}}
-                  <input type="text" class="form-control" id="tagInput" placeholder="create tag">
-                  <label for="floatingInput">Post tag</label>
-
-                  {{--  tags error starts --}}
-                  @if(flashMessages.has('errors.tags'))
-                  <p class="fs-6 text-danger mb-0" id="tagsError">
-                    {{ flashMessages.get('errors.tags') }}
-                  </p>
-                  @endif
-                  {{--  tags error ends --}}
-                </div>
-              </div>
-
-              {{--  Add button  --}}
-              <div class="col-12 col-sm-2 mt-2 mt-sm-0">
-                <button type="button" class="btn btn-primary" id="addTab">Add</button>
-              </div>
-            </div>
-          </div>
-
-          {{--  tag view  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6 mt-4">
-            <div class="p-4 border rounded" id="tabContainer">
-
-            </div>
+            @!component('components/tag/input')
           </div>
 
           {{--  buttons  --}}
@@ -109,58 +83,17 @@
 </div>
 
 <script>
-  $(document).ready(function () {
-    let index = 0
-    let tags = []
-
+  $(document).ready(() => {
+    // alert
+    const $alert = $('#alertContainer')
+    const $alertMsg = $("#alertMsg")
     const showErrorAlert = (message) => {
-      $('#alertContainer')
-        .append('<div class="alert alert-dismissible fade show text-capitalize" role="alert" id="alert"></div>')
-      $('#alert')
-        .append(`<strong>Error </strong>${message}`)
-        .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button> ')
-        .addClass('alert-danger')
+      $alert.css('display', 'block').addClass('alert-danger')
+      $alertMsg.append(`<strong>Error </strong>${message}`)
     }
 
-    $('#closeBtn').on('click', function () {
+    $('#closeBtn').on('click', () => {
       $('#btn').addClass('fade')
-    })
-
-    $('#addTab').on('click', function (e) {
-      e.preventDefault()
-
-      // adding new tag into array
-      let res = /^[a-zA-Z ]+$/.test($('#tagInput').val());
-      if (res) {
-        tags.push($('#tagInput').val())
-      } else {
-        // appending error alert
-        showErrorAlert('Tags can contain alphabets with no space only')
-        return
-      }
-
-      let i = ++index
-      $('#tabContainer').append(
-        `<span class="badge rounded-pill bg-secondary text-capitalize mt-1 ms-1 p-2" id=${i} style="cursor:pointer;"> </span>`
-      )
-
-      // assigning value to the badge
-      $('#' + i).text($('#tagInput').val())
-
-      // close button
-      $('#' + i).on('click', function () {
-        // removing from the tabs array
-        var index = tags.indexOf($('#' + i).text())
-        if (index !== -1) {
-          tags.splice(index, 1)
-        }
-
-        // fading tag
-        $('#' + i).addClass('fade').remove()
-      })
-
-      // resetting input text null
-      $('#tagInput').val('')
     })
 
     // let file
@@ -181,8 +114,7 @@
       reader.readAsDataURL(this.files[0]);
     });
 
-    let formData;
-    formData = new FormData()
+    let formData = new FormData()
 
     // on image change adding image to the file object, that we can use in form data
     let file
@@ -203,14 +135,15 @@
       formData.append('title', $('#titleInput').val())
       formData.append('description', $('#descriptionInput').val())
       formData.append('postImage', file)
-      for (var i = 0; i < tags.length; i++) {
+      // fetching value from tag input
+      const tags = JSON.parse($("#tags").val())
+      for (let i = 0; i < tags.length; i++) {
         formData.append('tags[]', tags[i]);
       }
 
       // sending the request
-
       try {
-        const success = await $.ajax({
+        await $.ajax({
           url: "{{ route('post.store') }}",
           method: 'POST',
           data: formData,
@@ -222,8 +155,6 @@
             'X-XSRF-TOKEN': helper.getCookie('XSRF-TOKEN'),
           },
         })
-
-        console.log('Success')
         window.location.href = "{{ route('post.index') }}"
       } catch (error) {
         /**

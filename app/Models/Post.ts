@@ -4,30 +4,13 @@ import {
   BelongsTo,
   belongsTo,
   column,
-  hasMany,
-  HasMany,
+  manyToMany,
+  ManyToMany,
 } from '@ioc:Adonis/Lucid/Orm'
-import PostTag from 'App/Models/PostTag'
 import Tag from 'App/Models/Tag'
+import TagPost from 'App/Models/TagPost'
 import User from 'App/Models/User'
 import { DateTime } from 'luxon'
-
-type PostType = {
-  id: number
-  title: string
-  description: string
-  tags: string[]
-  imgUrl: string
-}
-
-type UpdateType = {
-  id: number
-  title: string
-  description: string
-  tags: string[]
-  imgName?: string
-  imgUrl?: string
-}
 
 export default class Post extends BaseModel {
   @column({ isPrimary: true })
@@ -41,6 +24,9 @@ export default class Post extends BaseModel {
 
   @column()
   public user_id: number
+
+  @column()
+  public storage_prefix: string
 
   @column()
   public image_url: string
@@ -58,16 +44,21 @@ export default class Post extends BaseModel {
   })
   public user: BelongsTo<typeof User>
 
-  // post has many tags
-  @hasMany(() => PostTag, {
-    foreignKey: 'post_id', // defaults to userId
+  @manyToMany(() => Tag, {
+    // table name
+    pivotTable: 'tag_posts',
+    // foreign keys
+    localKey: 'id',
+    pivotForeignKey: 'post_id',
+    relatedKey: 'id',
+    pivotRelatedForeignKey: 'tag_id',
   })
-  public postTags: HasMany<typeof PostTag>
+  public tags: ManyToMany<typeof Tag>
 
   @beforeSave()
   public static async beforeSave(post: Post) {
-    post.title = post.title.toLowerCase().trim()
-    post.description = post.description.toLowerCase().trim()
+    post.title = post.title.toLowerCase()
+    post.description = post.description.toLowerCase()
   }
 
   /**
@@ -76,12 +67,7 @@ export default class Post extends BaseModel {
    */
   public static async getAll() {
     try {
-      let posts = await this.query()
-        .preload('user')
-        .preload('postTags', (postTagQuery) => {
-          postTagQuery.preload('tag')
-        })
-        .orderBy('created_at', 'desc')
+      const posts = await this.query().preload('user').preload('tags').orderBy('created_at', 'desc')
       return Promise.resolve(posts)
     } catch (error) {
       console.error(error)
@@ -94,45 +80,14 @@ export default class Post extends BaseModel {
    * @param userId user id
    * @returns Promise
    */
-  public static async getAllByUser(userId: number) {
+  public static async getAllByUserId(userId: number) {
     try {
-      let user = await User.query()
+      const user = await User.query()
         .where('id', userId)
         .preload('posts', (postQuery) => {
-          postQuery
-            .preload('postTags', (postTagQuery) => {
-              postTagQuery.preload('tag')
-            })
-            .orderBy('created_at', 'desc')
+          postQuery.orderBy('created_at', 'desc')
         })
         .first()
-      return Promise.resolve(user)
-    } catch (error) {
-      console.error(error)
-      return Promise.reject(error.message)
-    }
-  }
-
-  /**
-   * @description get user details by email
-   * @param email user email
-   * @returns Promise
-   */
-  public static async getAllByUserEmail(email: string) {
-    try {
-      let user = await User.query()
-        .where('email', email)
-        .preload('posts', (postQuery) => {
-          postQuery.preload('postTags', (postTagQuery) => {
-            postTagQuery.preload('tag')
-          })
-        })
-        .first()
-
-      if (!user) {
-        return Promise.reject('User not found with this email id')
-      }
-
       return Promise.resolve(user)
     } catch (error) {
       console.error(error)
@@ -142,10 +97,9 @@ export default class Post extends BaseModel {
 
   /**
    * @description the method to create new post
-   * @param task task to be created
    * @returns Promise
    */
-  public static async store(data: PostType) {
+  public static async storePost(data: StorePostType) {
     // creating post
     let post: Post
     try {
@@ -154,6 +108,7 @@ export default class Post extends BaseModel {
         description: data.description.toLocaleLowerCase(),
         user_id: data.id,
         image_url: data.imgUrl,
+        storage_prefix: data.storagePrefix,
       })
     } catch (error) {
       console.error(error)
@@ -164,7 +119,7 @@ export default class Post extends BaseModel {
     let tagIds: Array<number>
     try {
       // Non-null assertion operator
-      tagIds = await Tag.store(data.tags)
+      tagIds = await Tag.storeTag(data.tags)
     } catch (error) {
       console.error(error)
       return Promise.reject(error)
@@ -172,7 +127,7 @@ export default class Post extends BaseModel {
 
     // create relationships
     try {
-      await PostTag.store(post.id, tagIds)
+      await TagPost.storePostTag(post.id, tagIds)
     } catch (error) {
       console.error(error)
       return Promise.reject(error)
@@ -190,10 +145,10 @@ export default class Post extends BaseModel {
     try {
       let post = await this.query()
         .where('id', id)
-        .preload('user')
-        .preload('postTags', (postTagQuery) => {
-          postTagQuery.preload('tag')
+        .preload('user', (userQuery) => {
+          userQuery.preload('profile')
         })
+        .preload('tags')
         .first()
 
       if (!post) {
@@ -209,21 +164,14 @@ export default class Post extends BaseModel {
 
   /**
    * @description method to update task by id
-   * @param id task id
    * @param data data to be updated
    * @returns Promise
    */
-  public static async update(data: UpdateType) {
+  public static async updatePost(data: UpdatePostType) {
     // preloading post data
     let post: Post | null
     try {
-      post = await this.query()
-        .where('id', data.id)
-        .preload('postTags', (postTagQuery) => {
-          postTagQuery.preload('tag')
-        })
-        .first()
-
+      post = await this.query().where('id', data.id).preload('tags').first()
       if (!post) {
         return Promise.reject('Post not found')
       }
@@ -237,11 +185,13 @@ export default class Post extends BaseModel {
     post.description = data.description
 
     // if image name exists then saving new image name
-    if (data.imgUrl) {
+    if (data.imgUrl && data.storagePrefix) {
       post.image_url = data.imgUrl
+      post.storage_prefix = data.storagePrefix
     }
 
     try {
+      // saving updated state
       await post.save()
     } catch (error) {
       console.error(error)
@@ -249,20 +199,20 @@ export default class Post extends BaseModel {
     }
 
     // deleting old tags
-    try {
-      for (const postTag of post.postTags) {
+    for (const postTag of post.tags) {
+      try {
         await postTag.delete()
+      } catch (error) {
+        console.error(error)
+        return Promise.reject(error.message)
       }
-    } catch (error) {
-      console.error(error)
-      return Promise.reject(error.message)
     }
 
     // creating new tags
     let tagIds: Array<number>
     try {
       // Non-null assertion operator
-      tagIds = await Tag.store(data.tags)
+      tagIds = await Tag.storeTag(data.tags)
     } catch (error) {
       console.error(error)
       return Promise.reject(error)
@@ -270,7 +220,7 @@ export default class Post extends BaseModel {
 
     // create relationships
     try {
-      await PostTag.store(post.id, tagIds)
+      await TagPost.storePostTag(post.id, tagIds)
     } catch (error) {
       console.error(error)
       return Promise.reject(error)

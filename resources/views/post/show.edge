@@ -42,10 +42,12 @@
           Tags
         </h4>
         <div class="p-4 border rounded mt-1" id="tabContainer">
-          @each(postTag in post.postTags)
-          <span class="badge rounded-pill bg-secondary text-capitalize mt-1 ms-1 p-2" style="cursor:pointer;">
-            {{ postTag.tag.title }}
-          </span>
+          @each(tag in post.tags)
+          @!component('components/tag/index', {
+          tagId: tag.id,
+          title: tag.title,
+          deletable: false,
+          })
           @else
           <div class="mt-4 text-center">
             <p class="fs-4">No tags found</p>
@@ -56,8 +58,8 @@
         {{--  user details  --}}
         <h4 class="mt-4">
           Created By
-          <a class="text-primary text-capitalize" href="{{ route('profile.show', { email: post.user.email }) }}">
-            {{ post.user.first_name +' ' +  post.user.last_name }}
+          <a class="text-primary text-capitalize" href="{{ route('profile.show', { id: post.user.profile.id }) }}">
+            {{ post.user.profile.firstName +' ' +  post.user.profile.lastName }}
           </a>
         </h4>
 

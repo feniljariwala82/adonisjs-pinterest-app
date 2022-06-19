@@ -13,7 +13,7 @@ export default class PostsController {
    */
   public async index({ auth, session, response, view }: HttpContextContract) {
     try {
-      const user = await Post.getAllByUser(auth.user!.id)
+      const user = await Post.getAllByUserId(auth.user!.id)
       const html = await view.render('post/index', { posts: user?.posts })
       return html
     } catch (error) {
@@ -48,17 +48,17 @@ export default class PostsController {
         return response.status(400).json(error.message)
       }
 
-      const fileName = path.join(auth.user!.id.toString(), imageName)
+      const storagePrefix = path.join(auth.user!.id.toString(), imageName)
 
-      const imgUrl = await Drive.getUrl(fileName)
+      const imgUrl = await Drive.getUrl(storagePrefix)
 
       // creating a post
-      let result: string = ''
       try {
-        result = await Post.store({
+        await Post.storePost({
           id: auth.user!.id,
           title: payload.title,
           description: payload.description,
+          storagePrefix,
           imgUrl,
           tags: payload.tags,
         })
@@ -107,7 +107,7 @@ export default class PostsController {
       try {
         await bouncer.with('PostPolicy').authorize('edit', post)
       } catch (error) {
-        session.flash({ error: 'Not authorized to perform this action' })
+        session.flash({ error: 'Unauthorized' })
         return response.redirect().back()
       }
 
@@ -125,10 +125,6 @@ export default class PostsController {
    */
   public async update({ params, response, request, bouncer, auth }: HttpContextContract) {
     const { id } = params
-
-    if (!auth.user) {
-      return response.status(400).json('Unauthorized')
-    }
 
     // validate data
     try {
@@ -148,40 +144,41 @@ export default class PostsController {
         await bouncer.with('PostPolicy').authorize('update', post)
       } catch (error) {
         console.error(error)
-        return response.status(400).json('Not authorized to perform this action')
+        return response.status(400).json('Unauthorized')
       }
 
       /**
        * Removing old image if new image provided
        */
       let imgUrl: string = ''
-      let imgName: string | undefined = ''
+      let imgName: string | undefined
+      let storagePrefix: string = ''
       if (payload.postImage) {
-        await Drive.delete(path.join(post.user_id.toString(), post.image_name))
+        // deleting old image from storage
+        await Drive.delete(post.storage_prefix)
+
+        imgName = `${cuid()}.${payload.postImage.extname}`
 
         /**
          * adding new image file to the uploads folder
          */
-        await payload.postImage.moveToDisk(
-          auth.user.id.toString(),
-          {
-            name: cuid() + '.' + payload.postImage.extname,
-          },
-          'local'
-        )
-        imgName = payload.postImage.fileName
-        imgUrl = await Drive.getUrl(path.join(auth.user.id.toString(), imgName!))
+        await payload.postImage.moveToDisk(auth.user!.id.toString(), { name: imgName }, 'local')
+
+        // new storage prefix
+        storagePrefix = path.join(auth.user!.id.toString(), imgName)
+        // new url
+        imgUrl = await Drive.getUrl(storagePrefix)
       }
 
       // updating post data
       try {
-        const result = await Post.update({
+        const result = await Post.updatePost({
           id,
           title: payload.title,
           description: payload.description,
           tags: payload.tags,
-          imgName,
           imgUrl,
+          storagePrefix,
         })
         return response.status(200).json(result)
       } catch (error) {
@@ -189,7 +186,6 @@ export default class PostsController {
         return response.status(400).json(error)
       }
     } catch (error) {
-      console.log(error.messages.errors)
       // errors made by form validator
       const errorMessages = ErrorService.filterMessages(error)
       return response.status(400).json(errorMessages ? errorMessages : error)
@@ -217,7 +213,7 @@ export default class PostsController {
        * Removing image
        */
       try {
-        await Drive.delete(path.join(post.user_id.toString(), post.image_name))
+        await Drive.delete(post.storage_prefix)
       } catch (error) {
         console.error(error)
         session.flash({ error: error.message })

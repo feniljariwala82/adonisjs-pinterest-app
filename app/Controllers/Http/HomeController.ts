@@ -5,7 +5,7 @@ export default class HomeController {
   /**
    * @description home page of the application
    */
-  public async index({ view, session, response }: HttpContextContract) {
+  public index = async ({ view, session, response }: HttpContextContract) => {
     try {
       const posts = await Post.getAll()
       const html = await view.render('welcome', { posts })

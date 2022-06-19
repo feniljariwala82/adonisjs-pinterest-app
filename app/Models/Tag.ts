@@ -1,6 +1,6 @@
-import { DateTime } from 'luxon'
 import { BaseModel, column, hasMany, HasMany } from '@ioc:Adonis/Lucid/Orm'
-import PostTag from 'App/Models/PostTag'
+import TagPost from 'App/Models/TagPost'
+import { DateTime } from 'luxon'
 
 export default class Tag extends BaseModel {
   @column({ isPrimary: true })
@@ -16,10 +16,10 @@ export default class Tag extends BaseModel {
   public updatedAt: DateTime
 
   // post has many tags
-  @hasMany(() => PostTag, {
+  @hasMany(() => TagPost, {
     foreignKey: 'tag_id',
   })
-  public postTags: HasMany<typeof PostTag>
+  public postTags: HasMany<typeof TagPost>
 
   /**
    * @description method to find posts according to tags
@@ -28,7 +28,7 @@ export default class Tag extends BaseModel {
    */
   public static async getPostsForTag(tags: string) {
     try {
-      let posts = await this.query()
+      const posts = await this.query()
         .distinct()
         .select('posts.*')
         .from('posts')
@@ -47,8 +47,8 @@ export default class Tag extends BaseModel {
    * @param tags tags to be added
    * @returns Promise
    */
-  public static async store(tags: Array<string>) {
-    let tagIds: Array<number> = []
+  public static async storeTag(tags: Array<string>) {
+    const tagIds: Array<number> = []
     for (const tag of tags) {
       // checking tag exists or not
       let exists: Tag | null
@@ -66,8 +66,8 @@ export default class Tag extends BaseModel {
       } else {
         // create new tag and adding id for mapping the post to this tag
         try {
-          let createdTag = await this.create({
-            title: tag.toLocaleLowerCase(),
+          const createdTag = await this.create({
+            title: tag.toLowerCase(),
           })
           tagIds.push(createdTag.id)
         } catch (error) {

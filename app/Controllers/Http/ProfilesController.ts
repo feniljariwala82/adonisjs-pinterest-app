@@ -12,7 +12,6 @@ export default class ProfilesController {
    */
   public async show({ session, response, view, params }: HttpContextContract) {
     const { id } = params
-
     try {
       const user = await User.getUserById(id)
       const html = await view.render('profile/show', { user })

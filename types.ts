@@ -5,3 +5,34 @@ interface StoreProfileType {
   avatarUrl?: string
   socialAuth?: string
 }
+
+interface StorePostType {
+  id: number
+  title: string
+  description: string
+  tags: string[]
+  imgUrl: string
+  storagePrefix: string
+}
+
+interface UpdatePostType {
+  id: number
+  title: string
+  description: string
+  tags: string[]
+  imgUrl?: string
+  storagePrefix?: string
+}
+
+interface CreateUser {
+  firstName: string
+  lastName: string
+  email: string
+  password: string
+}
+
+interface UpdateUser {
+  firstName?: string
+  lastName?: string
+  password?: string
+}
