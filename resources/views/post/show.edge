@@ -65,25 +65,29 @@
 
         {{--  showing edit and delete button if the post is posted by the user  --}}
         @if(auth.user && auth.user.id === post.user_id)
-        <h4 class="mt-4">
-          Actions
-        </h4>
+
         {{--  Buttons  --}}
 
         <div id="actions" class="mt-4 d-flex">
-          {{--  edit button  --}}
+          {{--  edit button starts  --}}
+          @can('PostPolicy.edit', post)
           <a class="btn btn-warning me-2" href="{{ route('post.edit', { id: post.id }) }}">
             Edit
           </a>
+          @end
+          {{--  edit button ends  --}}
 
-          {{--  delete button  --}}
+          {{--  delete button starts  --}}
+          @can('PostPolicy.delete', post)
           <form method="POST" action="{{ route('post.destroy', { id: post.id }, { qs: {
-                _method: 'DELETE'
-                }
-            }) }}" onsubmit="return confirm('You\'ve got to be kidding me, you sure you want to delete this post?');">
+            _method: 'DELETE'
+            }
+        }) }}" onsubmit="return confirm('You\'ve got to be kidding me, you sure you want to delete this post?');">
             {{ csrfField() }}
             <button class="btn btn-primary" type="submit">Delete</button>
           </form>
+          @end
+          {{--  delete button ends  --}}
         </div>
         @endif
 
