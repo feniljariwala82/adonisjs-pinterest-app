@@ -23,16 +23,61 @@
 
 <script>
   $(document).ready(() => {
+
     // tag index used when creating a new tag
     let index = 0
     // array of tags
     const tags = []
+    // if any tags passed
+    const postTags = JSON.parse('{{{ JSON.stringify(tags) }}}')
+    // tag container
+    const $container = $("#tabContainer")
+    const $addTagBtn = $("#addTab")
+    const $tags = $("#tags")
+    const $input = $('#tagInput')
 
-    $('#addTab').on('click', (e) => {
+    /**
+     * displaying already created tags
+     */
+    if (postTags) {
+      for (const tag of postTags) {
+        const i = index
+        $container.append(
+          `<span class="badge rounded-pill bg-secondary text-capitalize p-2" id=${i} style="cursor:pointer;">
+      </span>`
+        )
+
+        // adding already existed tags to formTags array
+        tags.push(tag.title)
+        $tags.val(JSON.stringify(tags))
+
+        // assigning value to the badge
+        $('#' + i).text(tag.title)
+
+        // close button
+        $('#' + i).on('click', function () {
+          // removing from the tabs array
+          const index = tags.indexOf($('#' + i).text())
+          if (index !== -1) {
+            tags.splice(index, 1)
+            $tags.val(JSON.stringify(tags))
+          }
+
+          // fading tag
+          $('#' + i).addClass('fade').remove()
+        })
+
+        // at the end increasing index by one
+        index += 1
+      }
+    }
+
+    /**
+     * event handler for adding tag
+     */
+    $addTagBtn.on('click', (e) => {
       e.preventDefault()
 
-      const $tags = $("#tags")
-      const $input = $('#tagInput')
       const value = $input.val().trim()
 
       // adding new tag into array
@@ -46,8 +91,8 @@
         return
       }
 
-      const i = ++index
-      $('#tabContainer').append(
+      const i = index
+      $container.append(
         `<span class="badge rounded-pill bg-secondary text-capitalize mt-1 ms-1 p-2" id=${i} style="cursor:pointer;"> </span>`
       )
 
@@ -55,7 +100,7 @@
       $('#' + i).text(value)
 
       // remove button
-      $('#' + i).on('click', () => {
+      $('#' + i).on('click', function () {
         // removing from the tabs array
         const index = tags.indexOf($('#' + i).text())
         if (index !== -1) {
@@ -69,6 +114,9 @@
 
       // resetting input text null
       $input.val('')
+
+      // at the end increasing index by one
+      index += 1
     })
   })
 

@@ -48,7 +48,7 @@ export default class TagPost extends BaseModel {
         })
       } catch (error) {
         console.log(error)
-        return Promise.reject(error.message)
+        return Promise.reject(error)
       }
     }
 

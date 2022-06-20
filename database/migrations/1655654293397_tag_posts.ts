@@ -8,6 +8,7 @@ export default class TagPosts extends BaseSchema {
       table.increments('id').primary()
       table.integer('post_id').unsigned().references('posts.id').onDelete('CASCADE').notNullable()
       table.integer('tag_id').unsigned().references('tags.id').onDelete('CASCADE').notNullable()
+      table.unique(['post_id', 'tag_id'])
       table.timestamp('created_at', { useTz: true })
       table.timestamp('updated_at', { useTz: true })
     })

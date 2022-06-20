@@ -63,7 +63,7 @@ export default class Profile extends BaseModel {
         avatarUrl: data.avatarUrl && data.avatarUrl,
         socialAuth: data.socialAuth && data.socialAuth,
       })
-      return Promise.resolve('Profile created')
+      return Promise.resolve('Profile saved')
     } catch (error) {
       console.error(error)
       return Promise.reject(error.message)

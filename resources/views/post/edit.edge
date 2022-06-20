@@ -83,27 +83,11 @@
             </div>
             {{--  postImage dropdown ends  --}}
 
-            @set('tags', post.tags)
-            <div class="row align-items-center">
-              {{--  tags  --}}
-              <div class="col-12 col-sm-10">
-                <div class="form-floating">
-                  {{--  input  --}}
-                  <input type="text" class="form-control" id="tagInput" placeholder="create tag">
-                  <label for="floatingInput">Post tag</label>
-                </div>
-              </div>
-
-              {{--  Add button  --}}
-              <div class="col-12 col-sm-2 mt-2 mt-sm-0">
-                <button type="button" class="btn btn-primary" id="addTab">Add</button>
-              </div>
-            </div>
-
-            {{--  tags container starts  --}}
-            <div class="p-4 border rounded mt-3" id="tabContainer">
-            </div>
-            {{--  tags container ends  --}}
+            {{--  tag edit component starts  --}}
+            @!component('components/tag/input', {
+            tags: post.tags
+            })
+            {{--  tag edit component starts  --}}
 
             {{--  buttons  --}}
             <button class="btn btn-primary mt-2" id="submit">Update Post</button>
@@ -116,39 +100,6 @@
 
 <script>
   $(document).ready(() => {
-
-    const postTags = JSON.parse('{{{ JSON.stringify(tags) }}}')
-
-    let index = 0
-    let formTags = []
-
-    // displaying tags
-    for (const tag of postTags) {
-      let i = ++index
-      $('#tabContainer').append(
-        `<span class="badge rounded-pill bg-secondary text-capitalize mt-1 ms-1 p-2" id=${i} style="cursor:pointer;">
-      </span>`
-      )
-
-      // adding already existed tags to formTags array
-      formTags.push(tag.title)
-
-      // assigning value to the badge
-      $('#' + i).text(tag.title)
-
-      // close button
-      $('#' + i).on('click', function () {
-        // removing from the tabs array
-        const index = formTags.indexOf($('#' + i).text())
-        if (index !== -1) {
-          formTags.splice(index, 1)
-        }
-
-        // fading tag
-        $('#' + i).addClass('fade').remove()
-      })
-    }
-
     // alert
     const $alert = $('#alertContainer')
     const $alertMsg = $("#alertMsg")
@@ -161,49 +112,12 @@
       $('#btn').addClass('fade')
     })
 
-    $('#addTab').on('click', function (e) {
-      e.preventDefault()
-
-      // adding new tag into array
-      const regexResult = /^[a-zA-Z]+$/.test($('#tagInput').val());
-      if (regexResult) {
-        formTags.push($('#tagInput').val())
-      } else {
-        // appending error alert
-        showErrorAlert('Tags can contain alphabets with no space only')
-        return
-      }
-
-      let i = ++index
-      $('#tabContainer').append(
-        `<span class="badge rounded-pill bg-secondary text-capitalize mt-1 ms-1 p-2" id=${i} style="cursor:pointer;"> </span>`
-      )
-
-      // assigning value to the badge
-      $('#' + i).text($('#tagInput').val())
-
-      // close button
-      $('#' + i).on('click', function () {
-        // removing from the tabs array
-        var index = formTags.indexOf($('#' + i).text())
-        if (index !== -1) {
-          formTags.splice(index, 1)
-        }
-
-        // fading tag
-        $('#' + i).addClass('fade').remove()
-      })
-
-      // resetting input text null
-      $('#tagInput').val('')
-    })
-
     // let file
     $('input[type="file"]').change(function (e) {
       console.log('changed')
-      var fileName = e.target.files[0].name;
+      const fileName = e.target.files[0].name;
 
-      var reader = new FileReader();
+      const reader = new FileReader();
       reader.onload = (e) => {
         // get loaded data and render thumbnail.
         $("#imgContainer").css('display', 'block');
@@ -214,39 +128,41 @@
       reader.readAsDataURL(this.files[0]);
     });
 
-    let formData;
-    formData = new FormData()
+    let formData = new FormData()
     // default value of new image to false, making update image field optional
     formData.append('newImage', false)
 
     // on image change adding image to the file object, that we can use in form data
     let file
-    $('#postImage').on('change', function (event) {
-      event.preventDefault()
+    $('#postImage').on('change', function (e) {
+      e.preventDefault()
       file = this.files[0]
     })
 
     /**
      * submit form using ajax
      */
-    $('#submit').on('click', async (event) => {
-      event.preventDefault()
+    $('#submit').on('click', async (e) => {
+      e.preventDefault()
 
+      // spinner
       spinner.startLoading()
 
+      // appending form data
       formData.append('title', $('#titleInput').val())
       formData.append('description', $('#descriptionInput').val())
       if (file) {
         formData.append('postImage', file)
       }
-
-      for (var i = 0; i < formTags.length; i++) {
-        formData.append('tags[]', formTags[i]);
+      // fetching value from tag input
+      const tags = JSON.parse($("#tags").val())
+      for (let i = 0; i < tags.length; i++) {
+        formData.append('tags[]', tags[i]);
       }
 
       // sending the request
       try {
-        const success = await $.ajax({
+        await $.ajax({
           url: "{{ route('post.update', {id: post.id }) }}",
           method: 'PUT',
           data: formData,
@@ -259,12 +175,11 @@
           },
         })
 
-        console.log('Success')
         window.location.href = "{{ route('post.index') }}"
       } catch (error) {
         console.log(error)
         /**
-         * On error resetting form data for data duplication, 
+         * On error resetting form data for data duplication,
          */
         formData = new FormData()
         toast.error(error.responseText)

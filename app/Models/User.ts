@@ -1,4 +1,5 @@
 import Drive from '@ioc:Adonis/Core/Drive'
+import Database from '@ioc:Adonis/Lucid/Database'
 import Hash from '@ioc:Adonis/Core/Hash'
 import {
   BaseModel,
@@ -77,6 +78,9 @@ export default class User extends BaseModel {
    * @returns Promise
    */
   public static createUser = async (user: CreateUser) => {
+    // Transaction created
+    const trx = await Database.transaction()
+
     // checking if user exists or not
     try {
       const exists = await this.findBy('email', user.email)
@@ -87,13 +91,16 @@ export default class User extends BaseModel {
     }
 
     // creating user
-    let createdUser: User
+    let createdUser: User[] = []
     try {
-      createdUser = await this.create({
-        email: user.email,
-        password: await Hash.make(user.password.trim()),
-      })
+      createdUser = await trx
+        .insertQuery()
+        .table('users')
+        .insert({ email: user.email, password: await Hash.make(user.password.trim()) })
     } catch (error) {
+      // rollback whole transaction
+      await trx.rollback()
+
       console.error(error)
       return Promise.reject(error.message)
     }
@@ -103,10 +110,17 @@ export default class User extends BaseModel {
       await Profile.updateOrCreateProfile({
         firstName: user.firstName,
         lastName: user.lastName,
-        userId: createdUser.id,
+        userId: createdUser[0].id,
       })
+
+      // committing transaction
+      await trx.commit()
+
       return Promise.resolve('User created')
     } catch (error) {
+      // rollback whole transaction
+      await trx.rollback()
+
       console.error(error)
       return Promise.reject(error)
     }

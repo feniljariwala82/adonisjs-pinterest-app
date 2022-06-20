@@ -60,7 +60,7 @@ export default class PostsController {
           description: payload.description,
           storagePrefix,
           imgUrl,
-          tags: payload.tags,
+          tags: payload.tags.map((item) => item.trim().toLowerCase()),
         })
       } catch (error) {
         console.error(error)
@@ -89,7 +89,7 @@ export default class PostsController {
     } catch (error) {
       console.error(error)
       session.flash({ error })
-      return response.redirect().back()
+      return response.redirect().toRoute('home')
     }
   }
 
@@ -108,7 +108,7 @@ export default class PostsController {
         await bouncer.with('PostPolicy').authorize('edit', post)
       } catch (error) {
         session.flash({ error: 'Unauthorized' })
-        return response.redirect().back()
+        return response.redirect().toRoute('home')
       }
 
       const html = await view.render('post/edit', { post })
@@ -116,7 +116,7 @@ export default class PostsController {
     } catch (error) {
       console.error(error)
       session.flash({ error })
-      return response.redirect().back()
+      return response.redirect().toRoute('home')
     }
   }
 
@@ -176,7 +176,7 @@ export default class PostsController {
           id,
           title: payload.title,
           description: payload.description,
-          tags: payload.tags,
+          tags: payload.tags.map((item) => item.trim().toLowerCase()),
           imgUrl,
           storagePrefix,
         })
@@ -206,7 +206,7 @@ export default class PostsController {
         await bouncer.with('PostPolicy').authorize('delete', post)
       } catch (error) {
         session.flash({ error: 'Not authorized to perform this action' })
-        return response.redirect().back()
+        return response.redirect().toRoute('home')
       }
 
       /**
@@ -217,7 +217,7 @@ export default class PostsController {
       } catch (error) {
         console.error(error)
         session.flash({ error: error.message })
-        return response.redirect().back()
+        return response.redirect().toRoute('home')
       }
 
       // deleting
@@ -228,12 +228,12 @@ export default class PostsController {
       } catch (error) {
         console.error(error)
         session.flash({ error: error.message })
-        return response.redirect().back()
+        return response.redirect().toRoute('home')
       }
     } catch (error) {
       console.error(error)
       session.flash({ error })
-      return response.redirect().back()
+      return response.redirect().toRoute('home')
     }
   }
 }
