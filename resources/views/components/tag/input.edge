@@ -2,10 +2,20 @@
   {{--  tags  --}}
   <div class="col-12 col-sm-10">
     <div class="form-floating">
-      {{--  input  --}}
-      <input type="hidden" id="tags">
-      <input type="text" class="form-control" id="tagInput">
+
+      {{--  tag array input container starts  --}}
+      <div id="tagContainer">
+      </div>
+      {{--  tag array input container ends  --}}
+
+      {{--  input to enter tag  --}}
+      <input type="text" class="form-control {{ flashMessages.has('errors.tags') && 'is-invalid' }}" id="tagInput">
       <label for="floatingInput">Post tag</label>
+      @if(flashMessages.has('errors.tags'))
+      <p class="fs-6 text-danger mb-0">
+        {{ flashMessages.get('errors.tags') }}
+      </p>
+      @endif
     </div>
   </div>
 
@@ -23,6 +33,17 @@
 
 <script>
   $(document).ready(() => {
+
+    const $tagContainer = $("#tagContainer")
+
+    const appendTagInput = (id, value) => {
+      const tag = `<input type="hidden" id=tag_${id} name=tags[] value=${value}>`
+      $tagContainer.append(tag)
+    }
+
+    const removeTagInput = (id) => {
+      $tagContainer.children(`#tag_${id}`).remove()
+    }
 
     // tag index used when creating a new tag
     let index = 0
@@ -43,13 +64,13 @@
       for (const tag of postTags) {
         const i = index
         $container.append(
-          `<span class="badge rounded-pill bg-secondary text-capitalize p-2" id=${i} style="cursor:pointer;">
+          `<span class="badge rounded-pill bg-secondary text-capitalize mt-1 ms-1 p-2" id=${i} style="cursor:pointer;">
       </span>`
         )
 
         // adding already existed tags to formTags array
         tags.push(tag.title)
-        $tags.val(JSON.stringify(tags))
+        appendTagInput(i, tag.title)
 
         // assigning value to the badge
         $('#' + i).text(tag.title)
@@ -60,7 +81,7 @@
           const index = tags.indexOf($('#' + i).text())
           if (index !== -1) {
             tags.splice(index, 1)
-            $tags.val(JSON.stringify(tags))
+            removeTagInput(i)
           }
 
           // fading tag
@@ -82,16 +103,18 @@
 
       // adding new tag into array
       const regexResult = /^[a-zA-Z]+$/.test(value);
-      if (regexResult) {
-        tags.push(value)
-        $tags.val(JSON.stringify(tags))
-      } else {
+      if (!regexResult) {
         // appending error alert
         alert('Tags can contain alphabets with no space only')
         return
       }
 
+      // increasing index on validation passed
       const i = index
+
+      tags.push(value)
+      appendTagInput(i, value)
+
       $container.append(
         `<span class="badge rounded-pill bg-secondary text-capitalize mt-1 ms-1 p-2" id=${i} style="cursor:pointer;"> </span>`
       )
@@ -105,7 +128,7 @@
         const index = tags.indexOf($('#' + i).text())
         if (index !== -1) {
           tags.splice(index, 1)
-          $tags.val(JSON.stringify(tags))
+          removeTagInput(i)
         }
 
         // fading tag

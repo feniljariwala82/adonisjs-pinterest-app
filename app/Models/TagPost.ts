@@ -41,6 +41,17 @@ export default class TagPost extends BaseModel {
    */
   public static async storePostTag(postId: number, tagIds: Array<number>) {
     for (const tagId of tagIds) {
+      // checking whether the tag exist or not
+      try {
+        const exists = await this.query().where('post_id', postId).andWhere('tag_id', tagId).first()
+        if (exists) {
+          continue
+        }
+      } catch (error) {
+        console.log(error)
+        return Promise.reject(error.message)
+      }
+
       try {
         await this.create({
           post_id: postId,
@@ -48,7 +59,7 @@ export default class TagPost extends BaseModel {
         })
       } catch (error) {
         console.log(error)
-        return Promise.reject(error)
+        return Promise.reject(error.message)
       }
     }
 

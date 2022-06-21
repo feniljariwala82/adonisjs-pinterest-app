@@ -34,45 +34,48 @@ export default class PostsController {
   /**
    * @description to save new post
    */
-  public async store({ request, response, auth }: HttpContextContract) {
+  public async store({ request, response, auth, session }: HttpContextContract) {
+    // validating form data
+    const payload = await request.validate(PostStoreValidator)
+
+    // generating new name
+    const imageName = `${cuid()}.${payload.postImage.extname}`
+
+    // moving file to the uploads folder/aws s3
     try {
-      const payload = await request.validate(PostStoreValidator)
-
-      const imageName = `${cuid()}.${payload.postImage.extname}`
-
-      // moving file to the uploads folder/aws s3
-      try {
-        await payload.postImage.moveToDisk(auth.user!.id.toString(), { name: imageName }, 'local')
-      } catch (error) {
-        console.error(error)
-        return response.status(400).json(error.message)
-      }
-
-      const storagePrefix = path.join(auth.user!.id.toString(), imageName)
-
-      const imgUrl = await Drive.getUrl(storagePrefix)
-
-      // creating a post
-      try {
-        await Post.storePost({
-          id: auth.user!.id,
-          title: payload.title,
-          description: payload.description,
-          storagePrefix,
-          imgUrl,
-          tags: payload.tags.map((item) => item.trim().toLowerCase()),
-        })
-      } catch (error) {
-        console.error(error)
-        return response.status(400).json(error)
-      }
-
-      return response.status(200).json('Post created')
+      await payload.postImage.moveToDisk(auth.user!.id.toString(), { name: imageName }, 'local')
     } catch (error) {
-      // errors made by form validator
-      const errorMessages = ErrorService.filterMessages(error)
-      return response.status(400).json(errorMessages ? errorMessages : error)
+      console.error(error)
+      session.flash({ error: error.message })
+      return response.redirect().back()
     }
+
+    const storagePrefix = path.join(auth.user!.id.toString(), imageName)
+    let imgUrl: string
+    try {
+      imgUrl = await Drive.getUrl(storagePrefix)
+    } catch (error) {
+      session.flash({ error })
+      return response.redirect().back()
+    }
+
+    // creating a post
+    try {
+      await Post.storePost({
+        id: auth.user!.id,
+        title: payload.title,
+        description: payload.description,
+        storagePrefix,
+        imgUrl,
+        tags: payload.tags.map((item) => item.trim().toLowerCase()),
+      })
+    } catch (error) {
+      session.flash({ error })
+      return response.redirect().back()
+    }
+
+    session.flash({ success: 'Post created' })
+    return response.redirect().toRoute('post.index')
   }
 
   /**
@@ -123,72 +126,84 @@ export default class PostsController {
   /**
    * @description update particular post
    */
-  public async update({ params, response, request, bouncer, auth }: HttpContextContract) {
+  public async update({ params, response, request, bouncer, auth, session }: HttpContextContract) {
     const { id } = params
 
     // validate data
+    const payload = await request.validate(PostUpdateValidator)
+
+    // checking post available or not
+    let post: Post
     try {
-      const payload = await request.validate(PostUpdateValidator)
+      post = await Post.findOrFail(id)
+    } catch (error) {
+      session.flash({ error })
+      return response.redirect().back()
+    }
 
-      // checking post available or not
-      let post: Post
-      try {
-        post = await Post.findOrFail(id)
-      } catch (error) {
-        console.error(error)
-        return response.status(400).json('Post not found')
-      }
+    // checking authorization
+    try {
+      await bouncer.with('PostPolicy').authorize('update', post)
+    } catch (error) {
+      console.error(error)
+      session.flash({ error: 'Unauthorized' })
+      return response.redirect().toRoute('post.index')
+    }
 
-      // checking authorization
-      try {
-        await bouncer.with('PostPolicy').authorize('update', post)
-      } catch (error) {
-        console.error(error)
-        return response.status(400).json('Unauthorized')
-      }
+    /**
+     * Removing old image if new image provided
+     */
+    let imgUrl: string = ''
+    let imgName: string | undefined
+    let storagePrefix: string = ''
+
+    if (payload.postImage) {
+      // deleting old image from storage
+      await Drive.delete(post.storage_prefix)
+
+      imgName = `${cuid()}.${payload.postImage.extname}`
 
       /**
-       * Removing old image if new image provided
+       * adding new image file to the uploads folder
        */
-      let imgUrl: string = ''
-      let imgName: string | undefined
-      let storagePrefix: string = ''
-      if (payload.postImage) {
-        // deleting old image from storage
-        await Drive.delete(post.storage_prefix)
-
-        imgName = `${cuid()}.${payload.postImage.extname}`
-
-        /**
-         * adding new image file to the uploads folder
-         */
-        await payload.postImage.moveToDisk(auth.user!.id.toString(), { name: imgName }, 'local')
-
-        // new storage prefix
-        storagePrefix = path.join(auth.user!.id.toString(), imgName)
-        // new url
-        imgUrl = await Drive.getUrl(storagePrefix)
-      }
-
-      // updating post data
       try {
-        const result = await Post.updatePost({
-          id,
-          title: payload.title,
-          description: payload.description,
-          tags: payload.tags.map((item) => item.trim().toLowerCase()),
-          imgUrl,
-          storagePrefix,
-        })
-        return response.status(200).json(result)
+        await payload.postImage.moveToDisk(auth.user!.id.toString(), { name: imgName }, 'local')
       } catch (error) {
         console.error(error)
-        return response.status(400).json(error)
+        session.flash({ error: error.message })
+        return response.redirect().back()
       }
+
+      // new storage prefix
+      storagePrefix = path.join(auth.user!.id.toString(), imgName)
+
+      // new url
+      try {
+        imgUrl = await Drive.getUrl(storagePrefix)
+      } catch (error) {
+        console.error(error)
+        session.flash({ error: error.message })
+        return response.redirect().back()
+      }
+    }
+
+    // updating post data
+    try {
+      const result = await Post.updatePost({
+        id,
+        title: payload.title,
+        description: payload.description,
+        tags: payload.tags.map((item) => item.trim().toLowerCase()),
+        imgUrl,
+        storagePrefix,
+      })
+
+      session.flash({ success: result })
+      return response.redirect().toRoute('post.index')
     } catch (error) {
-      // errors made by form validator
-      const errorMessages = ErrorService.filterMessages(error)
-      return response.status(400).json(errorMessages ? errorMessages : error)
+      console.error(error)
+      session.flash({ error })
+      return response.redirect().back()
     }
   }
 
@@ -205,8 +220,8 @@ export default class PostsController {
       try {
         await bouncer.with('PostPolicy').authorize('delete', post)
       } catch (error) {
-        session.flash({ error: 'Not authorized to perform this action' })
-        return response.redirect().toRoute('home')
+        session.flash({ error: 'Unauthorized' })
+        return response.redirect().toRoute('post.index')
       }
 
       /**
@@ -217,7 +232,7 @@ export default class PostsController {
       } catch (error) {
         console.error(error)
         session.flash({ error: error.message })
-        return response.redirect().toRoute('home')
+        return response.redirect().toRoute('post.index')
       }
 
       // deleting
@@ -228,12 +243,12 @@ export default class PostsController {
       } catch (error) {
         console.error(error)
         session.flash({ error: error.message })
-        return response.redirect().toRoute('home')
+        return response.redirect().toRoute('post.index')
       }
     } catch (error) {
       console.error(error)
       session.flash({ error })
-      return response.redirect().toRoute('home')
+      return response.redirect().toRoute('post.index')
     }
   }
 }
