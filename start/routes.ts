@@ -47,6 +47,7 @@ Route.resource('/post', 'PostsController').middleware({
   edit: 'auth',
   update: 'auth',
   destroy: 'auth',
+  // no middleware for show route to make it available to all the users
 })
 
 Route.resource('/profile', 'ProfilesController').only(['show', 'edit', 'update']).middleware({

@@ -11,9 +11,12 @@
     </ol>
   </nav>
 
+  {{--  row starts  --}}
   <div class="row">
+
+    {{--  column 1 starts  --}}
     <div class="col-12 col-md-6">
-      <h4 class="mb-4 fs-4 fw-bold  text-center">Image Preview</h4>
+      <h4 class="mb-4 fs-4 fw-bold text-center">Image Preview</h4>
 
       {{-- image preview  --}}
       <div class="col-12">
@@ -22,8 +25,11 @@
       </div>
 
     </div>
+    {{--  column 1 ends  --}}
+
+    {{--  column 2 starts  --}}
     <div class="col-12 col-md-6">
-      <form action="{{ route('post.store') }}" method="POST" id="myForm">
+      <form action="{{ route('post.store') }}" method="POST" id="createPostForm" enctype='multipart/form-data'>
         {{ csrfField() }}
 
         <div class="d-flex flex-column justify-content-center align-items-center">
@@ -31,83 +37,80 @@
             <h4 class="mb-4 fs-4 fw-bold">Create Post</h4>
           </div>
 
-          {{--  alert container  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
-            <div class="alert alert-dismissible fade show" role="alert" id="alertContainer" style="display:none;">
-              <p id="alertMsg"></p>
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-          </div>
-
           {{--  title input field starts --}}
           <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+
             <div class="form-floating mb-3">
               <input type="text" class="form-control {{ flashMessages.has('errors.title') && 'is-invalid' }}"
                 id="titleInput" name="title" placeholder="create song" value="{{ flashMessages.get('title', '') }}"
                 required>
               <label for="floatingInput">Post Title</label>
+              @if(flashMessages.has('errors.title'))
+              <p class="fs-6 text-danger mb-0">
+                {{ flashMessages.get('errors.title') }}
+              </p>
+              @endif
             </div>
 
             {{--  description starts  --}}
             <div class="form-floating mb-3">
-              <textarea class="form-control" placeholder="Leave a description here" id="descriptionInput"
-                name="description" value="{{ flashMessages.get('description', '') }}" style="height: 100px"
-                required></textarea>
+              <textarea class="form-control {{ flashMessages.has('errors.description') && 'is-invalid' }}"
+                placeholder="Leave a description here" id="descriptionInput" name="description"
+                value="{{ flashMessages.get('description', '') }}" style="height: 100px" required></textarea>
               <label for="floatingTextarea2">Post Description</label>
+              @if(flashMessages.has('errors.description'))
+              <p class="fs-6 text-danger mb-0">
+                {{ flashMessages.get('errors.description') }}
+              </p>
+              @endif
+              <script>
+                const $desc = document.getElementById('descriptionInput')
+                const value = "{{ description }}"
+                if (value !== 'undefined') {
+                  $desc.innerHTML = value
+                }
+
+              </script>
             </div>
             {{--  description ends  --}}
 
             {{--  postImage dropdown starts  --}}
             <div class="form-floating mb-3">
               <div class="input-group mb-3">
-                <input type="file" class="form-control" id="postImage" name="postImage">
+                <input type="file" class="form-control {{ flashMessages.has('errors.postImage') && 'is-invalid' }}"
+                  id="postImage" name="postImage">
                 <label class="input-group-text" for="inputGroupFile01">Upload</label>
+                @if(flashMessages.has('errors.postImage'))
+                <p class="fs-6 text-danger mb-0">
+                  {{ flashMessages.get('errors.postImage') }}
+                </p>
+                @endif
               </div>
             </div>
             {{--  postImage dropdown ends  --}}
-          </div>
-          {{--  title input field ends --}}
 
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
             @!component('components/tag/input', {
             tags: null
             })
-          </div>
 
-          {{--  buttons  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6 mt-4">
-            <button class="btn btn-primary" id="submit">Create Post</button>
+            {{--  buttons  --}}
+            <button class="btn btn-primary mt-4" type="submit" id="createPostBtn">Create Post</button>
           </div>
+          {{--  title input field ends --}}
         </div>
       </form>
     </div>
+    {{--  column 2 ends  --}}
   </div>
 </div>
 
 <script>
   $(document).ready(() => {
-
-    // uploaded file variable
-    let file
-
-    // alert
-    const $alert = $('#alertContainer')
-    const $alertMsg = $("#alertMsg")
-    const showErrorAlert = (message) => {
-      $alert.css('display', 'block').addClass('alert-danger')
-      $alertMsg.append(`<strong>Error </strong>${message}`)
-    }
-
-    $('#closeBtn').on('click', () => {
-      $('#btn').addClass('fade')
-    })
-
     // let file
     $('input[type="file"]').change(function (e) {
-      console.log('changed')
-      var fileName = e.target.files[0].name;
+      const fileName = e.target.files[0].name;
 
-      var reader = new FileReader();
+      const reader = new FileReader();
       reader.onload = (e) => {
         // get loaded data and render thumbnail.
         $("#upImage")
@@ -115,57 +118,18 @@
           .attr('src', e.target.result)
         $('#imgMessage').css('display', 'none')
       };
-      // on image change adding image to the file object, that we can use in form data
-      file = this.files[0]
       // read the image file as a data URL.
       reader.readAsDataURL(this.files[0]);
     });
 
-    let formData = new FormData()
-
+    const $form = $("#createPostForm")
     /**
-     * submit form using ajax
+     * on form submitted, starting loader
      */
-    $('#submit').on('click', async (event) => {
-      event.preventDefault()
-
+    $form.on('submit', () => {
       // starting spinner
       spinner.startLoading()
-
-      formData.append('title', $('#titleInput').val())
-      formData.append('description', $('#descriptionInput').val())
-      formData.append('postImage', file)
-      // fetching value from tag input
-      const tags = JSON.parse($("#tags").val())
-      for (let i = 0; i < tags.length; i++) {
-        formData.append('tags[]', tags[i]);
-      }
-
-      // sending the request
-      try {
-        await $.ajax({
-          url: "{{ route('post.store') }}",
-          method: 'POST',
-          data: formData,
-          cache: false,
-          contentType: false,
-          processData: false,
-          timeout: 60000,
-          headers: {
-            'X-XSRF-TOKEN': helper.getCookie('XSRF-TOKEN'),
-          },
-        })
-        window.location.href = "{{ route('post.index') }}"
-      } catch (error) {
-        /**
-         * On error resetting form data for data duplication,
-         */
-        formData = new FormData()
-        toast.error(error.responseText)
-      } finally {
-        spinner.stopLoading()
-      }
-    })
+    });
   })
 
 </script>

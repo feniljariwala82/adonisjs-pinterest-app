@@ -37,38 +37,48 @@
 
       <h4 class="mb-4 fs-4 fw-bold text-center mt-3 mt-sm-0">Edit Post</h4>
 
-      <form action="{{ route('post.store') }}" method="POST" id="myForm">
+      <form action="{{ route('post.update', { id: post.id }, { qs: { _method:'PUT' } } ) }}" method="POST"
+        id="editPostForm" enctype='multipart/form-data'>
         {{ csrfField() }}
 
         <div class="d-flex flex-column justify-content-center align-items-center">
 
-          {{--  alert container starts  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
-            <div class="alert alert-dismissible fade show" role="alert" id="alertContainer" style="display:none;">
-              <p id="alertMsg"></p>
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-          </div>
-          {{--  alert container starts  --}}
-
           <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
             {{--  title starts  --}}
             <div class="form-floating mb-3">
-              <input type="text" class="form-control" id="titleInput" name="title" placeholder="create song"
-                value="{{ post.title }}" required>
+              <input type="text" class="form-control {{ flashMessages.has('errors.title') && 'is-invalid' }}"
+                id="titleInput" name="title" placeholder="create song"
+                value="{{ flashMessages.get('title', post.title) }}" required>
               <label for="floatingInput">Post Title</label>
+
+              @if(flashMessages.has('errors.title'))
+              <p class="fs-6 text-danger mb-0">
+                {{ flashMessages.get('errors.title') }}
+              </p>
+              @endif
             </div>
             {{--  title ends  --}}
 
             {{--  description starts  --}}
             <div class="form-floating mb-3">
-              <textarea class="form-control" placeholder="Leave a description here" id="descriptionInput"
-                name="description" style="height: 100px" value="{{post.description}}" required></textarea>
+              <textarea class="form-control {{ flashMessages.has('errors.description') && 'is-invalid' }}"
+                placeholder="Leave a description here" id="descriptionInput" name="description"
+                value="{{ flashMessages.get('description', post.description) }}" style="height: 100px" required>
+              </textarea>
               <label for="floatingTextarea2">Post Description</label>
+
+              @if(flashMessages.has('errors.description'))
+              <p class="fs-6 text-danger mb-0">
+                {{ flashMessages.get('errors.description') }}
+              </p>
+              @endif
             </div>
             <script>
               const $desc = document.getElementById('descriptionInput')
-              $desc.innerHTML = "{{ post.description }}"
+              const value = "{{ post.description }}"
+              if (value !== 'undefined') {
+                $desc.innerHTML = value
+              }
 
             </script>
             {{--  description ends  --}}
@@ -77,8 +87,14 @@
             <div class="form-floating mb-3">
               <div class="input-group mb-3">
                 <label class="input-group-text" for="inputGroupFile01">Upload</label>
-                <input type="file" class="form-control" id="postImage" name="postImage"
-                  value="{{ flashMessages.get('postImage', '') }}">
+                <input type="file" class="form-control {{ flashMessages.has('errors.postImage') && 'is-invalid' }}"
+                  id="postImage" name="postImage">
+
+                @if(flashMessages.has('errors.postImage'))
+                <p class="fs-6 text-danger mb-0">
+                  {{ flashMessages.get('errors.postImage') }}
+                </p>
+                @endif
               </div>
             </div>
             {{--  postImage dropdown ends  --}}
@@ -100,18 +116,6 @@
 
 <script>
   $(document).ready(() => {
-    // alert
-    const $alert = $('#alertContainer')
-    const $alertMsg = $("#alertMsg")
-    const showErrorAlert = (message) => {
-      $alert.css('display', 'block').addClass('alert-danger')
-      $alertMsg.append(`<strong>Error </strong>${message}`)
-    }
-
-    $('#closeBtn').on('click', function () {
-      $('#btn').addClass('fade')
-    })
-
     // let file
     $('input[type="file"]').change(function (e) {
       console.log('changed')
@@ -124,69 +128,17 @@
         $("#upImage").attr('src', e.target.result);
       };
       // read the image file as a data URL.
-      file = this.files[0]
       reader.readAsDataURL(this.files[0]);
     });
 
-    let formData = new FormData()
-    // default value of new image to false, making update image field optional
-    formData.append('newImage', false)
-
-    // on image change adding image to the file object, that we can use in form data
-    let file
-    $('#postImage').on('change', function (e) {
-      e.preventDefault()
-      file = this.files[0]
-    })
-
+    const $form = $("#editPostForm")
     /**
-     * submit form using ajax
+     * on form submitted, starting loader
      */
-    $('#submit').on('click', async (e) => {
-      e.preventDefault()
-
-      // spinner
+    $form.on('submit', () => {
+      // starting spinner
       spinner.startLoading()
-
-      // appending form data
-      formData.append('title', $('#titleInput').val())
-      formData.append('description', $('#descriptionInput').val())
-      if (file) {
-        formData.append('postImage', file)
-      }
-      // fetching value from tag input
-      const tags = JSON.parse($("#tags").val())
-      for (let i = 0; i < tags.length; i++) {
-        formData.append('tags[]', tags[i]);
-      }
-
-      // sending the request
-      try {
-        await $.ajax({
-          url: "{{ route('post.update', {id: post.id }) }}",
-          method: 'PUT',
-          data: formData,
-          cache: false,
-          contentType: false,
-          processData: false,
-          timeout: 60000,
-          headers: {
-            'X-XSRF-TOKEN': helper.getCookie('XSRF-TOKEN'),
-          },
-        })
-
-        window.location.href = "{{ route('post.index') }}"
-      } catch (error) {
-        console.log(error)
-        /**
-         * On error resetting form data for data duplication,
-         */
-        formData = new FormData()
-        toast.error(error.responseText)
-      } finally {
-        spinner.stopLoading()
-      }
-    })
+    });
   })
 
 </script>

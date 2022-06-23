@@ -10,7 +10,7 @@
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
       <li class="breadcrumb-item" aria-current="page"><a
-          href="{{ route('profile.show', { id: user.profile.id } ) }}">Profile</a></li>
+          href="{{ route('profile.show', { id: profile.id } ) }}">Profile</a></li>
       <li class="breadcrumb-item active" aria-current="page">Edit</li>
     </ol>
   </nav>
@@ -27,8 +27,8 @@
         {{--  original image preview  --}}
         <div class="col-6">
           <p class="text-center fs-4">Previous Image</p>
-          @if(user.profile.avatarUrl)
-          <img src="{{ user.profile.avatarUrl }}" class="img-thumbnail" alt="Image" id="avatarUrl">
+          @if(profile.avatarUrl)
+          <img src="{{ profile.avatarUrl }}" class="img-thumbnail" alt="Image" id="avatarUrl">
           @else
           <p class="fs-5 text-capitalize text-center">Image not available!</p>
           @endif
@@ -59,7 +59,7 @@
           {{--  first name starts  --}}
           <div class="form-floating mb-3">
             <input type="text" class="form-control" id="firstName" name="firstName" placeholder="enter first name"
-              value="{{ user.profile.firstName }}" required>
+              value="{{ profile.firstName }}" required>
             <label for="floatingInput">First Name</label>
           </div>
           {{--  first name ends  --}}
@@ -67,7 +67,7 @@
           {{--  last name starts  --}}
           <div class="form-floating mb-3">
             <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Dou"
-              value="{{ user.profile.lastName }}" required>
+              value="{{ profile.lastName }}" required>
             <label for="floatingInput">Last Name</label>
           </div>
           {{--  last name ends  --}}

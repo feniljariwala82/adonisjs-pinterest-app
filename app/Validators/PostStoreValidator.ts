@@ -21,6 +21,7 @@ export default class CreatePostValidator {
     'postImage.required': 'The Image is required',
     'postImage.size': 'Image size should not be greater than 2mb',
     'postImage.extnames': 'Image should be jpg or png only',
+    'tags.required': 'Please add at least one tag',
     'tags.minLength': 'At least one tag should be entered',
     'tags.alpha': 'Tags can contain alphabets only',
   }

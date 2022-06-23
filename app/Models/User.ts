@@ -91,12 +91,15 @@ export default class User extends BaseModel {
     }
 
     // creating user
-    let createdUser: User[] = []
+    let createdUser: any[] = []
     try {
       createdUser = await trx
         .insertQuery()
         .table('users')
         .insert({ email: user.email, password: await Hash.make(user.password.trim()) })
+
+      // committing transaction
+      await trx.commit()
     } catch (error) {
       // rollback whole transaction
       await trx.rollback()
@@ -110,11 +113,8 @@ export default class User extends BaseModel {
       await Profile.updateOrCreateProfile({
         firstName: user.firstName,
         lastName: user.lastName,
-        userId: createdUser[0].id,
+        userId: createdUser[0],
       })
-
-      // committing transaction
-      await trx.commit()
 
       return Promise.resolve('User created')
     } catch (error) {

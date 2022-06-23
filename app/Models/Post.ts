@@ -214,9 +214,27 @@ export default class Post extends BaseModel {
       post.storage_prefix = data.storagePrefix
     }
 
+    // tags removed
+    const removedTagIds: number[] = []
+    post.tags.map((tag) => {
+      if (!data.tags.includes(tag.title)) {
+        removedTagIds.push(tag.id)
+      }
+    })
+
+    // removing removed tags
+    try {
+      await post.related('tags').detach(removedTagIds)
+    } catch (error) {
+      console.error(error)
+      return Promise.reject(error.message)
+    }
+
     try {
       // saving updated state
       post = await post.save()
+
+      await trx.commit()
     } catch (error) {
       console.error(error)
       return Promise.reject(error.message)
@@ -227,6 +245,9 @@ export default class Post extends BaseModel {
     try {
       existedTags = await Tag.getAllByTagTitle(data.tags)
     } catch (error) {
+      // rollback whole update transaction on failure
+      trx.rollback()
+
       console.error(error)
       return Promise.reject(error)
     }
@@ -234,8 +255,10 @@ export default class Post extends BaseModel {
     // data type to insert new tag into relationship
     const newTags: { title: string }[] = []
 
-    // tag string array
+    // existing tag list
     const existedTagList = existedTags.map((tag) => tag.title)
+
+    // generating new tag list
     data.tags.map((tag) => {
       if (!existedTagList.includes(tag)) {
         // if tag does not exist then adding it into new tags
@@ -245,6 +268,7 @@ export default class Post extends BaseModel {
 
     // inserting the tags that are new
     try {
+      // creating new tags using related method
       await post.related('tags').createMany(newTags)
     } catch (error) {
       console.error(error)

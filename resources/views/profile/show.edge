@@ -15,8 +15,8 @@
 
   {{--  user data  --}}
   <div class="text-center">
-    @if(user.profile.avatarUrl)
-    <img src="{{ user.profile.avatarUrl }}" class="rounded mx-auto d-block img-thumbnail" alt="User"
+    @if(profile.avatarUrl)
+    <img src="{{ profile.avatarUrl }}" class="rounded mx-auto d-block img-thumbnail" alt="User"
       style="height:150px; width:150px;">
     @else
     <img src="{{ asset('assets/images/user.jpg') }}" class="rounded mx-auto d-block img-thumbnail" alt="User"
@@ -24,11 +24,11 @@
     @endif
 
     <h4 class="mt-4 fw-bold text-capitalize mt-2">
-      {{ user.profile.firstName + ' ' + user.profile.lastName }}
+      {{ profile.firstName + ' ' + profile.lastName }}
     </h4>
 
     <h5 class="fw-normal mt-2">
-      {{ user.email }}
+      {{ profile.user.email }}
     </h5>
 
     {{--  edit button, show only if it is the logged in user  --}}
@@ -37,16 +37,14 @@
       Share
     </button>
 
-    <script>
-      // FIXME need to remove this conditional authorization and need to add view actions
-
-    </script>
-    @if(auth.user && auth.user.id === user.profile.userId)
-    <button type="button" class="btn btn-secondary mt-2" id="editProfile">
-      <i class="fas fa-user-edit"></i>
-      Edit Profile
-    </button>
-    @endif
+    @can('ProfilePolicy.update', profile)
+    <form action="{{ route('profile.edit', { id: profile.id} ) }}" method="get">
+      <button type="button" class="btn btn-secondary mt-2" type="submit">
+        <i class="fas fa-user-edit"></i>
+        Edit Profile
+      </button>
+    </form>
+    @end
   </div>
 
   {{--  Modal  --}}
@@ -70,10 +68,10 @@
 
   {{--  Showing all the posts by the user  --}}
   <div class="row mt-4 justify-content-center align-items-center" data-masonry='{"percentPosition": true }'>
-    @each(post in user.posts)
+    @each(post in profile.user.posts)
     <div class="col-6 col-sm-6 col-md-4 col-lg-3">
       {{--  post card  --}}
-      <a href="{{ route('post.show', {id: post.id}) }}">
+      <a href="{{ route('post.show', { id: post.id }) }}">
         <img src="{{ post.image_url }}" class="card-img-bottom card-img-top" alt="image1">
         <div class="card-body">
           <h5 class="card-title text-center fs-6">{{ post.title.charAt(0).toUpperCase() +  post.title.slice(1) }}</h5>
@@ -107,10 +105,6 @@
     })
 
     modal.toggle()
-  })
-
-  $('#editProfile').on('click', () => {
-    window.location.href = "{{ route('profile.edit', {id: profile.id}) }}"
   })
 
 </script>
