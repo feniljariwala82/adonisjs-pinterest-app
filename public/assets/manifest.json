@@ -1,11 +1,11 @@
 {
-  "assets/app.css": "http://localhost:52879/assets/app.css",
-  "assets/app.js": "http://localhost:52879/assets/app.js",
-  "assets/fonts/fa-solid-900.ttf": "http://localhost:52879/assets/fonts/fa-solid-900.e615bbcb.ttf",
-  "assets/fonts/fa-brands-400.ttf": "http://localhost:52879/assets/fonts/fa-brands-400.b823fc0d.ttf",
-  "assets/fonts/fa-solid-900.woff2": "http://localhost:52879/assets/fonts/fa-solid-900.59edf72a.woff2",
-  "assets/fonts/fa-brands-400.woff2": "http://localhost:52879/assets/fonts/fa-brands-400.ebb7a127.woff2",
-  "assets/fonts/fa-regular-400.ttf": "http://localhost:52879/assets/fonts/fa-regular-400.0d03b1bb.ttf",
-  "assets/images/user.jpg": "http://localhost:52879/assets/images/user.99fb67f8.jpg",
-  "assets/fonts/fa-regular-400.woff2": "http://localhost:52879/assets/fonts/fa-regular-400.0caf4c6c.woff2"
+  "assets/app.css": "http://localhost:51179/assets/app.css",
+  "assets/app.js": "http://localhost:51179/assets/app.js",
+  "assets/fonts/fa-solid-900.ttf": "http://localhost:51179/assets/fonts/fa-solid-900.e615bbcb.ttf",
+  "assets/fonts/fa-brands-400.ttf": "http://localhost:51179/assets/fonts/fa-brands-400.b823fc0d.ttf",
+  "assets/fonts/fa-solid-900.woff2": "http://localhost:51179/assets/fonts/fa-solid-900.59edf72a.woff2",
+  "assets/fonts/fa-brands-400.woff2": "http://localhost:51179/assets/fonts/fa-brands-400.ebb7a127.woff2",
+  "assets/fonts/fa-regular-400.ttf": "http://localhost:51179/assets/fonts/fa-regular-400.0d03b1bb.ttf",
+  "assets/images/user.jpg": "http://localhost:51179/assets/images/user.99fb67f8.jpg",
+  "assets/fonts/fa-regular-400.woff2": "http://localhost:51179/assets/fonts/fa-regular-400.0caf4c6c.woff2"
 }

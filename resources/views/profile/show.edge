@@ -37,9 +37,9 @@
       Share
     </button>
 
-    @can('ProfilePolicy.update', profile)
-    <form action="{{ route('profile.edit', { id: profile.id} ) }}" method="get">
-      <button type="button" class="btn btn-secondary mt-2" type="submit">
+    @can('ProfilePolicy.edit', profile)
+    <form action="{{ route('profile.edit', { id: profile.id }) }}" method="get">
+      <button class="btn btn-secondary mt-2" type="submit">
         <i class="fas fa-user-edit"></i>
         Edit Profile
       </button>

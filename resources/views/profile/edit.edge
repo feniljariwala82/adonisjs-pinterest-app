@@ -137,7 +137,7 @@
 
       try {
         const succcess = await $.ajax({
-          url: "{{ route('profile.update', { id: user.profile.id }, { qs: { _method:'PUT' }}) }}",
+          url: "{{ route('profile.update', { id: profile.id }, { qs: { _method:'PUT' }}) }}",
           method: 'POST',
           data: formData,
           cache: false,

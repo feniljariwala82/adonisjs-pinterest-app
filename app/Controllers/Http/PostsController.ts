@@ -1,8 +1,8 @@
 import Drive from '@ioc:Adonis/Core/Drive'
+import Env from '@ioc:Adonis/Core/Env'
 import { cuid } from '@ioc:Adonis/Core/Helpers'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Post from 'App/Models/Post'
-import ErrorService from 'App/Services/ErrorService'
 import PostStoreValidator from 'App/Validators/PostStoreValidator'
 import PostUpdateValidator from 'App/Validators/PostUpdateValidator'
 import path from 'path'
@@ -249,6 +249,25 @@ export default class PostsController {
       console.error(error)
       session.flash({ error })
       return response.redirect().toRoute('post.index')
+    }
+  }
+
+  public download = async ({ params, response, session }: HttpContextContract) => {
+    const { id } = params
+
+    try {
+      const post = await Post.getPostById(parseInt(id))
+      const url = await Drive.getSignedUrl(post.storage_prefix, { expiresIn: '2mins' })
+
+      if (Env.get('NODE_ENV') === 'development') {
+        return response.redirect(`http://${Env.get('HOST')}:${Env.get('PORT')}${url}`)
+      } else {
+        return response.redirect(url)
+      }
+    } catch (error) {
+      console.error(error)
+      session.flash({ error: error.message })
+      return response.redirect().back()
     }
   }
 }

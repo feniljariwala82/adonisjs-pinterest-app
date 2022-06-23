@@ -1,11 +1,13 @@
 import {
   BaseModel,
+  afterFind,
   beforeSave,
   BelongsTo,
   belongsTo,
   column,
   manyToMany,
   ManyToMany,
+  afterFetch,
 } from '@ioc:Adonis/Lucid/Orm'
 import Drive from '@ioc:Adonis/Core/Drive'
 import Tag from 'App/Models/Tag'
@@ -61,6 +63,18 @@ export default class Post extends BaseModel {
   public static async beforeSave(post: Post) {
     post.title = post.title.toLowerCase()
     post.description = post.description.toLowerCase()
+  }
+
+  @afterFind()
+  public static async afterFindHook(post: Post) {
+    post.$extras.imageBaseString = (await Drive.get(post.storage_prefix)).toString('base64')
+  }
+
+  @afterFetch()
+  public static async afterFetchHook(posts: Post[]) {
+    for (const post of posts) {
+      post.$extras.imageBaseString = (await Drive.get(post.storage_prefix)).toString('base64')
+    }
   }
 
   /**
@@ -165,7 +179,7 @@ export default class Post extends BaseModel {
    */
   public static async getPostById(id: number) {
     try {
-      let post = await this.query()
+      const post = await this.query()
         .where('id', id)
         .preload('user', (userQuery) => {
           userQuery.preload('profile')

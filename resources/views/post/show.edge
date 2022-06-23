@@ -16,12 +16,13 @@
   <div class="row mt-4 border rounded p-4">
 
     {{--  image container  --}}
-    <div class="col-12 col-sm-6">
-      <img src="{{ post.image_url }}" class="card-img-bottom card-img-top" alt="image1">
+    <div class="col-12 col-sm-12 col-md-6">
+      <img src="data:image/png;base64, {{ post.$extras.imageBaseString }}" class="card-img-bottom card-img-top"
+        loading='lazy' alt="image_{{post.title}}">
     </div>
 
     {{--  body container  --}}
-    <div class="col-12 col-sm-6">
+    <div class="col-12 col-sm-12 col-md-6">
       <div class="card-body">
         <h4>
           Title
@@ -66,7 +67,7 @@
         <div id="actions" class="mt-4 d-flex">
           {{--  edit button starts  --}}
           @can('PostPolicy.edit', post)
-          <a class="btn btn-warning me-2" href="{{ route('post.edit', { id: post.id }) }}">
+          <a class="btn btn-warning mx-1 text-white" href="{{ route('post.edit', { id: post.id }) }}">
             Edit
           </a>
           @end
@@ -77,12 +78,19 @@
           <form method="POST" action="{{ route('post.destroy', { id: post.id }, { qs: {
             _method: 'DELETE'
             }
-        }) }}" onsubmit="return confirm('You\'ve got to be kidding me, you sure you want to delete this post?');">
+        }) }}" onsubmit="return confirm('You\'ve got to be kidding me, you sure you want to delete this post?');"
+            class="mx-1">
             {{ csrfField() }}
             <button class="btn btn-primary" type="submit">Delete</button>
           </form>
           @end
           {{--  delete button ends  --}}
+
+          {{--  download button starts  --}}
+          <a class="btn btn-success mx-1 text-white" href="{{ route('post.download', { id: post.id }) }}">
+            Download
+          </a>
+          {{--  download button ends  --}}
         </div>
         @endif
 

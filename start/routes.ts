@@ -47,16 +47,13 @@ Route.resource('/post', 'PostsController').middleware({
   edit: 'auth',
   update: 'auth',
   destroy: 'auth',
-  // no middleware for show route to make it available to all the users
+  // no middleware for "show" route to make it available to all the users
 })
+
+// downloads image
+Route.get('/post/download/:id', 'PostsController.download').as('post.download')
 
 Route.resource('/profile', 'ProfilesController').only(['show', 'edit', 'update']).middleware({
   edit: 'auth',
   update: 'auth',
 })
-
-// Route.group(() => {
-//   Route.get('/profile/:email', 'ProfilesController.show').as('show').middleware(['silentAuth'])
-//   Route.get('/profile/:id/edit', 'ProfilesController.edit').as('edit').middleware(['auth'])
-//   Route.put('/profile/:id', 'ProfilesController.update').as('update').middleware(['auth'])
-// }).as('profile')
