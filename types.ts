@@ -11,7 +11,6 @@ interface StorePostType {
   title: string
   description: string
   tags: string[]
-  imgUrl: string
   storagePrefix: string
 }
 
@@ -20,7 +19,6 @@ interface UpdatePostType {
   title: string
   description: string
   tags: string[]
-  imgUrl?: string
   storagePrefix?: string
 }
 

@@ -14,7 +14,7 @@ export default class ProfileUpdateValidator {
       rules.minLength(8),
       rules.regex(passwordRegex),
     ]),
-    avatarUrl: schema.file.optional({
+    postImage: schema.file.optional({
       size: '2mb',
       extnames: ['jpg', 'png'],
     }),

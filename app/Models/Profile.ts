@@ -1,6 +1,15 @@
-import { BaseModel, beforeSave, belongsTo, BelongsTo, column } from '@ioc:Adonis/Lucid/Orm'
+import {
+  BaseModel,
+  beforeSave,
+  belongsTo,
+  BelongsTo,
+  column,
+  afterFetch,
+  afterFind,
+} from '@ioc:Adonis/Lucid/Orm'
 import User from 'App/Models/User'
 import { DateTime } from 'luxon'
+import Drive from '@ioc:Adonis/Core/Drive'
 
 export default class Profile extends BaseModel {
   @column({ isPrimary: true })
@@ -14,6 +23,9 @@ export default class Profile extends BaseModel {
 
   @column()
   public fullName: string
+
+  @column()
+  public storagePrefix: string
 
   @column()
   public avatarUrl: string
@@ -40,6 +52,24 @@ export default class Profile extends BaseModel {
 
   @belongsTo(() => User, { localKey: 'id', foreignKey: 'userId' })
   public user: BelongsTo<typeof User>
+
+  @afterFind()
+  public static async afterFindHook(profile: Profile) {
+    if (profile.storagePrefix) {
+      profile.$extras.imageBaseString = (await Drive.get(profile.storagePrefix)).toString('base64')
+    }
+  }
+
+  @afterFetch()
+  public static async afterFetchHook(profiles: Profile[]) {
+    for (const profile of profiles) {
+      if (profile.storagePrefix) {
+        profile.$extras.imageBaseString = (await Drive.get(profile.storagePrefix)).toString(
+          'base64'
+        )
+      }
+    }
+  }
 
   /**
    * @description stores profile into profile table

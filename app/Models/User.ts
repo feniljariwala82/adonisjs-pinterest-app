@@ -192,41 +192,34 @@ export default class User extends BaseModel {
    * @returns Promise
    */
   public static update = async (
-    data: { id: number; imageUrl?: string; imageName?: string },
+    data: { id: number; storagePrefix?: string },
     updateData: UpdateUser
   ) => {
-    const { id, imageName, imageUrl } = data
+    const { id, storagePrefix } = data
     const { firstName, lastName, password } = updateData
+
+    const trx = await Database.transaction()
 
     // checking whether the user exists or not
     let user: User
     try {
-      user = await User.query().where('id', id).preload('profile').firstOrFail()
+      user = await User.query({ client: trx }).where('id', id).preload('profile').firstOrFail()
     } catch (error) {
       console.error(error)
       return Promise.reject('User not found')
     }
 
-    /**
-     * Removing an old image if a new image provided
-     */
-    if (imageUrl && user.profile.avatarUrl && user.profile.socialAuth === 'local' && imageName) {
-      try {
-        await Drive.delete(imageName)
-      } catch (error) {
-        console.error(error)
-        return Promise.reject(error.message)
-      }
+    // for password
+    if (password) {
+      user.password = await Hash.make(password.trim())
     }
 
     // saving user data
     try {
-      // for password
-      if (password) {
-        user.password = await Hash.make(password.trim())
-      }
-
       await user.save()
+
+      // committing the transaction
+      await trx.commit()
     } catch (error) {
       console.error(error)
       return Promise.reject(error.message)
@@ -242,22 +235,40 @@ export default class User extends BaseModel {
       if (lastName) {
         profile.lastName = lastName
       }
-      if (imageUrl) {
-        profile.avatarUrl = imageUrl
+      if (storagePrefix) {
+        profile.storagePrefix = storagePrefix
       }
 
       try {
         await profile.save()
       } catch (error) {
+        // if profile saving fails
+        await trx.rollback()
+
         console.error(error)
         return Promise.reject(error.message)
       }
     } catch (error) {
+      // if profile saving fails
+      await trx.rollback()
+
       console.error(error)
       return Promise.reject(error)
     }
 
-    return Promise.resolve('User updated')
+    /**
+     * Removing an old image if a new image provided
+     */
+    if (user.profile.storagePrefix && storagePrefix) {
+      try {
+        await Drive.delete(user.profile.storagePrefix)
+      } catch (error) {
+        console.error(error)
+        return Promise.reject(error.message)
+      }
+    }
+
+    return Promise.resolve('Profile updated')
   }
 
   public static getUserById = async (id: number) => {

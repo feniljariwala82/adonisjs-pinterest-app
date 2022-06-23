@@ -15,12 +15,18 @@
 
   {{--  user data  --}}
   <div class="text-center">
-    @if(profile.avatarUrl)
-    <img src="{{ profile.avatarUrl }}" class="rounded mx-auto d-block img-thumbnail" alt="User"
-      style="height:150px; width:150px;">
+
+    {{--  if local auth or image updated  --}}
+    @if(profile.socialAuth === 'local' || profile.storagePrefix)
+    <img class="img-thumbnail" src="data:image/png;base64, {{ profile.$extras.imageBaseString }}"
+      alt="image_{{profile.firstName}}" style="height:300px;">
+    {{--  if social auth  --}}
+    @elseif(profile.socialAuth === 'github' || profile.socialAuth === 'google' || profile.socialAuth ===
+    'facebook')
+    <img src="{{ profile.avatarUrl }}" class="img-thumbnail" alt="image_{{profile.firstName}}">
+    {{--  if no image  --}}
     @else
-    <img src="{{ asset('assets/images/user.jpg') }}" class="rounded mx-auto d-block img-thumbnail" alt="User"
-      style="height:150px; width:150px;">
+    <p class="fs-5 text-capitalize text-center">Image not available!</p>
     @endif
 
     <h4 class="mt-4 fw-bold text-capitalize mt-2">

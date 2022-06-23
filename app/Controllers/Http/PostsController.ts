@@ -66,7 +66,6 @@ export default class PostsController {
         title: payload.title,
         description: payload.description,
         storagePrefix,
-        imgUrl,
         tags: payload.tags.map((item) => item.trim().toLowerCase()),
       })
     } catch (error) {
@@ -153,13 +152,18 @@ export default class PostsController {
     /**
      * Removing old image if new image provided
      */
-    let imgUrl: string = ''
     let imgName: string | undefined
     let storagePrefix: string = ''
 
     if (payload.postImage) {
       // deleting old image from storage
-      await Drive.delete(post.storage_prefix)
+      try {
+        await Drive.delete(post.storage_prefix)
+      } catch (error) {
+        console.error(error)
+        session.flash({ error: error.message })
+        return response.redirect().back()
+      }
 
       imgName = `${cuid()}.${payload.postImage.extname}`
 
@@ -176,15 +180,6 @@ export default class PostsController {
 
       // new storage prefix
       storagePrefix = path.join(auth.user!.id.toString(), imgName)
-
-      // new url
-      try {
-        imgUrl = await Drive.getUrl(storagePrefix)
-      } catch (error) {
-        console.error(error)
-        session.flash({ error: error.message })
-        return response.redirect().back()
-      }
     }
 
     // updating post data
@@ -194,7 +189,6 @@ export default class PostsController {
         title: payload.title,
         description: payload.description,
         tags: payload.tags.map((item) => item.trim().toLowerCase()),
-        imgUrl,
         storagePrefix,
       })
 

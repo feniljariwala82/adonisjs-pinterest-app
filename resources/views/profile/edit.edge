@@ -27,8 +27,15 @@
         {{--  original image preview  --}}
         <div class="col-6">
           <p class="text-center fs-4">Previous Image</p>
-          @if(profile.avatarUrl)
-          <img src="{{ profile.avatarUrl }}" class="img-thumbnail" alt="Image" id="avatarUrl">
+
+          @if(profile.socialAuth === 'local' || profile.storagePrefix)
+          <img src="data:image/png;base64, {{ profile.$extras.imageBaseString }}" class="img-thumbnail"
+            alt="image_{{profile.firstName}}">
+
+          @elseif(profile.socialAuth === 'github' || profile.socialAuth === 'google' || profile.socialAuth ===
+          'facebook')
+          <img src="{{ profile.avatarUrl }}" class="img-thumbnail" alt="image_{{profile.firstName}}">
+
           @else
           <p class="fs-5 text-capitalize text-center">Image not available!</p>
           @endif
@@ -50,48 +57,72 @@
           <h4 class="mb-4 fs-4 fw-bold">Edit Profile</h4>
         </div>
 
-        {{--  alert container  --}}
-        <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6" id="alertContainer">
-          {{--  alert will be appended here  --}}
-        </div>
-
         <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
-          {{--  first name starts  --}}
-          <div class="form-floating mb-3">
-            <input type="text" class="form-control" id="firstName" name="firstName" placeholder="enter first name"
-              value="{{ profile.firstName }}" required>
-            <label for="floatingInput">First Name</label>
-          </div>
-          {{--  first name ends  --}}
 
-          {{--  last name starts  --}}
-          <div class="form-floating mb-3">
-            <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Dou"
-              value="{{ profile.lastName }}" required>
-            <label for="floatingInput">Last Name</label>
-          </div>
-          {{--  last name ends  --}}
+          <form action="{{ route('profile.update', { id: profile.id }, { qs: { _method:'PUT' }}) }}" method="post"
+            enctype='multipart/form-data'>
 
-          {{--  profile image starts  --}}
-          <div class="form-floating mb-3">
-            <div class="input-group mb-3">
-              <label class="input-group-text" for="inputGroupFile01">Profile Image</label>
-              <input type="file" class="form-control" id="postImage" name="postImage">
+            {{ csrfField() }}
+
+            {{--  first name starts  --}}
+            <div class="form-floating mb-3">
+              <input type="text" class="form-control {{ flashMessages.has('errors.firstName') && 'is-invalid' }}"
+                id="firstName" name="firstName" placeholder="enter first name"
+                value="{{ flashMessages.get('firstName', profile.firstName) }}">
+              <label for="floatingInput">First Name</label>
+              @if(flashMessages.has('errors.firstName'))
+              <p class="fs-6 text-danger mb-0">
+                {{ flashMessages.get('errors.firstName') }}
+              </p>
+              @endif
             </div>
-          </div>
-          {{--  profile image ends  --}}
+            {{--  first name ends  --}}
 
-          {{--  password starts  --}}
-          <div class="form-floating mb-3">
-            <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
-            <label for="floatingPassword">Password</label>
-          </div>
-          {{--  password ends  --}}
+            {{--  last name starts  --}}
+            <div class="form-floating mb-3">
+              <input type="text" class="form-control {{ flashMessages.has('errors.lastName') && 'is-invalid' }}"
+                id="lastName" name="lastName" placeholder="enter last name"
+                value="{{ flashMessages.get('lastName', profile.lastName) }}">
+              <label for="floatingInput">Last Name</label>
+              @if(flashMessages.has('errors.lastName'))
+              <p class="fs-6 text-danger mb-0">
+                {{ flashMessages.get('errors.lastName') }}
+              </p>
+              @endif
+            </div>
+            {{--  last name ends  --}}
 
-          {{--  buttons  --}}
-          <button class="btn btn-primary" id="submit">Update Profile</button>
+            {{--  profile image starts  --}}
+            <div class="form-floating mb-3">
+              <div class="input-group">
+                <label class="input-group-text" for="inputGroupFile01">Profile Image</label>
+                <input type="file" class="form-control" id="postImage" name="postImage">
+              </div>
+              @if(flashMessages.get('errors.postImage'))
+              <p class="fs-6 text-danger mb-0">
+                {{ flashMessages.get('errors.postImage') }}
+              </p>
+              @endif
+            </div>
+            {{--  profile image ends  --}}
+
+            {{--  password starts  --}}
+            <div class="form-floating mb-3">
+              <input type="password" class="form-control {{ flashMessages.has('errors.password') && 'is-invalid' }}"
+                id="password" name="password" placeholder="enter password">
+              <label for="floatingInput">Password</label>
+              @if(flashMessages.has('errors.password'))
+              <p class="fs-6 text-danger mb-0">
+                {{ flashMessages.get('errors.password') }}
+              </p>
+              @endif
+            </div>
+            {{--  password ends  --}}
+
+            {{--  buttons  --}}
+            <button class="btn btn-primary" type="submit">Update Profile</button>
+          </form>
         </div>
-
       </div>
     </div>
   </div>
@@ -99,9 +130,6 @@
 
 <script>
   $(document).ready(() => {
-    let file
-    let formData;
-    formData = new FormData()
 
     $('input[type="file"]').change((e) => {
       const fileName = e.target.files[0].name;
@@ -113,7 +141,7 @@
           .attr('src', e.target.result)
       };
       // read the image file as a data URL.
-      file = e.target.files[0]
+      const file = e.target.files[0]
       reader.readAsDataURL(file);
     });
 
@@ -121,44 +149,6 @@
     $('#postImage').on('change', (event) => {
       event.preventDefault()
       $('#imgContainer').css('display', 'inline-block')
-    })
-
-    /**
-     * submit form using ajax
-     */
-    $('#submit').on('click', async (event) => {
-      event.preventDefault()
-      formData.append('firstName', $('#firstName').val())
-      formData.append('lastName', $('#lastName').val())
-      if (file) {
-        formData.append('avatarUrl', file)
-      }
-      formData.append('password', $('#password').val())
-
-      try {
-        const succcess = await $.ajax({
-          url: "{{ route('profile.update', { id: profile.id }, { qs: { _method:'PUT' }}) }}",
-          method: 'POST',
-          data: formData,
-          cache: false,
-          contentType: false,
-          processData: false,
-          headers: {
-            'X-XSRF-TOKEN': helper.getCookie('XSRF-TOKEN'),
-          },
-        })
-        window.location.href = "{{ route('auth.logout') }}"
-      } catch (error) {
-        /**
-         * On error resetting form data for stopping data duplication,
-         */
-        formData = new FormData()
-        $("#upImage")
-          .css('display', 'block')
-          .attr('src', '')
-        $('#imgContainer').css('display', 'none')
-        toast.error(error.responseText)
-      }
     })
   })
 

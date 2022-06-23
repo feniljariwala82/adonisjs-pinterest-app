@@ -124,7 +124,6 @@ export default class Post extends BaseModel {
         post.title = data.title
         post.description = data.description
         post.user_id = data.id
-        post.image_url = data.imgUrl
         post.storage_prefix = data.storagePrefix
 
         // creating a transaction
@@ -223,8 +222,7 @@ export default class Post extends BaseModel {
     post.description = data.description
 
     // if image name exists then saving new image name
-    if (data.imgUrl && data.storagePrefix) {
-      post.image_url = data.imgUrl
+    if (data.storagePrefix) {
       post.storage_prefix = data.storagePrefix
     }
 
