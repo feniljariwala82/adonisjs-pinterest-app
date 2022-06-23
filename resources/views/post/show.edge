@@ -13,11 +13,6 @@
   </nav>
   @endif
 
-  <button type="button" class="btn btn-primary" id="back">
-    <i class="fas fa-long-arrow-alt-left"></i>
-    Go Back
-  </button>
-
   <div class="row mt-4 border rounded p-4">
 
     {{--  image container  --}}
@@ -72,7 +67,7 @@
 
         <div id="actions" class="mt-4 d-flex">
           {{--  edit button  --}}
-          <a class="btn btn-warning me-2" href="{{ route('post.edit', { id: post.id }) }}">
+          <a class="btn btn-warning me-2 text-white" href="{{ route('post.edit', { id: post.id }) }}">
             Edit
           </a>
 

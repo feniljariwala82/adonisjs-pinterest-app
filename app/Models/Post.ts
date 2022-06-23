@@ -7,6 +7,7 @@ import {
   manyToMany,
   ManyToMany,
 } from '@ioc:Adonis/Lucid/Orm'
+import Drive from '@ioc:Adonis/Core/Drive'
 import Tag from 'App/Models/Tag'
 import TagPost from 'App/Models/TagPost'
 import User from 'App/Models/User'
@@ -89,6 +90,7 @@ export default class Post extends BaseModel {
           postQuery.orderBy('created_at', 'desc')
         })
         .first()
+
       return Promise.resolve(user)
     } catch (error) {
       console.error(error)
