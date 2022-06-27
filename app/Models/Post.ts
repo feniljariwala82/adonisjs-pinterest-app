@@ -117,58 +117,61 @@ export default class Post extends BaseModel {
    * @returns Promise
    */
   public static async storePost(data: StorePostType) {
+    // Transaction created
+    const trx = await Database.transaction()
+
+    // creating post using transaction
+    let post = new Post()
     try {
-      const result = await Database.transaction(async (trx) => {
-        // creating post
-        const post = new Post()
-        post.title = data.title
-        post.description = data.description
-        post.user_id = data.id
-        post.storage_prefix = data.storagePrefix
+      post.title = data.title
+      post.description = data.description
+      post.user_id = data.id
+      post.storage_prefix = data.storagePrefix
 
-        // creating a transaction
-        post.useTransaction(trx)
+      // using transaction
+      post.useTransaction(trx)
 
-        // saving post with transaction
-        await post.save()
-
-        // finding the tags that already exists
-        const existedTags: Tag[] = await Tag.getAllByTagTitle(data.tags)
-
-        // data type to insert new tag into relationship
-        const newTags: { title: string }[] = []
-
-        // tag string array
-        const existedTagList = existedTags.map((tag) => tag.title)
-        data.tags.map((tag) => {
-          if (!existedTagList.includes(tag)) {
-            // if tag does not exist then adding it into new tags
-            newTags.push({ title: tag })
-          }
-        })
-
-        // inserting the tags that are new
-        await post.related('tags').createMany(newTags)
-
-        // creating relationships with pre-existing tags
-        try {
-          await TagPost.storePostTag(
-            post.id,
-            existedTags.map((tag) => tag.id)
-          )
-        } catch (error) {
-          // if it fails to insert data into pivot table we rollback the transaction
-          trx.rollback()
-        }
-
-        return Promise.resolve('Post created')
-      })
-
-      return result
+      // saving record
+      post = await post.save()
     } catch (error) {
       console.error(error)
       return Promise.reject(error.message)
     }
+
+    // finding the tags that already exists
+    const existedTags: Tag[] = await Tag.getAllByTagTitle(data.tags)
+
+    // data type to insert new tag into relationship
+    const newTags: { title: string }[] = []
+
+    // tag string array
+    const existedTagList = existedTags.map((tag) => tag.title)
+    data.tags.map((tag) => {
+      if (!existedTagList.includes(tag)) {
+        // if tag does not exist then adding it into new tags
+        newTags.push({ title: tag })
+      }
+    })
+
+    // inserting the tags that are new
+    await post.related('tags').createMany(newTags)
+
+    // creating relationships with pre-existing tags
+    try {
+      await TagPost.storePostTag(
+        post.id,
+        existedTags.map((tag) => tag.id)
+      )
+
+      await trx.commit()
+    } catch (error) {
+      await trx.rollback()
+
+      console.error(error)
+      return Promise.reject(error)
+    }
+
+    return Promise.resolve('Post created')
   }
 
   /**

@@ -51,13 +51,6 @@ export default class PostsController {
     }
 
     const storagePrefix = path.join(auth.user!.id.toString(), imageName)
-    let imgUrl: string
-    try {
-      imgUrl = await Drive.getUrl(storagePrefix)
-    } catch (error) {
-      session.flash({ error })
-      return response.redirect().back()
-    }
 
     // creating a post
     try {
