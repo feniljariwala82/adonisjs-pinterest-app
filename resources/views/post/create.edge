@@ -23,7 +23,6 @@
         <img src="" class="img-thumbnail" alt="Image" id="upImage" style="display:none;">
         <p class="fs-4 text-capitalize text-center" id="imgMessage">Image not selected!</p>
       </div>
-
     </div>
     {{--  column 1 ends  --}}
 
@@ -65,7 +64,7 @@
               @endif
               <script>
                 const $desc = document.getElementById('descriptionInput')
-                const value = "{{ description }}"
+                const value = "{{ flashMessages.get('description', '') }}"
                 if (value !== 'undefined') {
                   $desc.innerHTML = value
                 }

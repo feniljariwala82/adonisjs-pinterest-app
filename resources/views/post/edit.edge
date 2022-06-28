@@ -21,7 +21,8 @@
         {{--  original image preview  --}}
         <div class="col-6">
           <p class="text-center">Old Image</p>
-          <img src="{{ post.image_url }}" class="img-thumbnail" alt="Image" id="oldImage">
+          <img src="data:image/png;base64, {{ post.$extras.imageBaseString }}" class="img-thumbnail" alt="Image"
+            id="oldImage">
         </div>
 
         {{--  new image preview  --}}

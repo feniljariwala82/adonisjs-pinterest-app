@@ -41,16 +41,8 @@ export default class PostsController {
     // generating new name
     const imageName = `${cuid()}.${payload.postImage.extname}`
 
-    // moving file to the uploads folder/aws s3
-    try {
-      await payload.postImage.moveToDisk(auth.user!.id.toString(), { name: imageName }, 'local')
-    } catch (error) {
-      console.error(error)
-      session.flash({ error: error.message })
-      return response.redirect().back()
-    }
-
-    const storagePrefix = path.join(auth.user!.id.toString(), imageName)
+    // to save it as a posix path
+    const storagePrefix = path.posix.join(auth.user!.id.toString(), imageName)
 
     // creating a post
     try {
@@ -66,6 +58,19 @@ export default class PostsController {
       return response.redirect().back()
     }
 
+    // moving file to the uploads folder/aws s3 on successful record creation
+    try {
+      await payload.postImage.moveToDisk(
+        auth.user!.id.toString(),
+        { name: imageName },
+        Env.get('DRIVE_DISK')
+      )
+    } catch (error) {
+      console.error(error)
+      session.flash({ error: error.message })
+      return response.redirect().back()
+    }
+
     session.flash({ success: 'Post created' })
     return response.redirect().toRoute('post.index')
   }
@@ -78,7 +83,7 @@ export default class PostsController {
 
     // fetching particular post
     try {
-      const post = await Post.getPostById(id)
+      const post = await Post.getPostById(parseInt(id))
       const html = await view.render('post/show', { post })
       return html
     } catch (error) {
@@ -96,7 +101,7 @@ export default class PostsController {
 
     // fetching particular post
     try {
-      const post = await Post.getPostById(id)
+      const post = await Post.getPostById(parseInt(id))
 
       // checking authorization
       try {
@@ -127,7 +132,7 @@ export default class PostsController {
     // checking post available or not
     let post: Post
     try {
-      post = await Post.findOrFail(id)
+      post = await Post.findOrFail(parseInt(id))
     } catch (error) {
       session.flash({ error })
       return response.redirect().back()
@@ -147,32 +152,17 @@ export default class PostsController {
      */
     let imgName: string | undefined
     let storagePrefix: string = ''
+    let toBeDeletedImage: string = ''
 
     if (payload.postImage) {
-      // deleting old image from storage
-      try {
-        await Drive.delete(post.storage_prefix)
-      } catch (error) {
-        console.error(error)
-        session.flash({ error: error.message })
-        return response.redirect().back()
-      }
+      // old storage prefix
+      toBeDeletedImage = post.storage_prefix
 
+      // new image name
       imgName = `${cuid()}.${payload.postImage.extname}`
 
-      /**
-       * adding new image file to the uploads folder
-       */
-      try {
-        await payload.postImage.moveToDisk(auth.user!.id.toString(), { name: imgName }, 'local')
-      } catch (error) {
-        console.error(error)
-        session.flash({ error: error.message })
-        return response.redirect().back()
-      }
-
       // new storage prefix
-      storagePrefix = path.join(auth.user!.id.toString(), imgName)
+      storagePrefix = path.posix.join(auth.user!.id.toString(), imgName)
     }
 
     // updating post data
@@ -184,6 +174,37 @@ export default class PostsController {
         tags: payload.tags.map((item) => item.trim().toLowerCase()),
         storagePrefix,
       })
+
+      /**
+       * on successful attempt deleting old image and shifting new image to S3
+       */
+      if (payload.postImage) {
+        /**
+         * adding new image file to the uploads folder
+         */
+        try {
+          await payload.postImage.moveToDisk(
+            auth.user!.id.toString(),
+            { name: imgName },
+            Env.get('DRIVE_DISK')
+          )
+        } catch (error) {
+          console.error(error)
+          session.flash({ error: error.message })
+          return response.redirect().back()
+        }
+
+        /**
+         * removing old file
+         */
+        try {
+          await Drive.delete(toBeDeletedImage)
+        } catch (error) {
+          console.error(error)
+          session.flash({ error: error.message })
+          return response.redirect().back()
+        }
+      }
 
       session.flash({ success: result })
       return response.redirect().toRoute('post.index')

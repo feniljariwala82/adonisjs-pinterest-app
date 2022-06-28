@@ -28,17 +28,19 @@
         <div class="col-6">
           <p class="text-center fs-4">Previous Image</p>
 
-          @if(profile.socialAuth === 'local' || profile.storagePrefix)
-          <img src="data:image/png;base64, {{ profile.$extras.imageBaseString }}" class="img-thumbnail"
-            alt="image_{{profile.firstName}}">
-
+          {{--  image rendering starts  --}}
+          @if(profile.storagePrefix)
+          <img class="img-thumbnail" src="data:image/png;base64, {{ profile.$extras.imageBaseString }}"
+            alt="image_{{profile.firstName}}" style="height:300px;">
+          {{--  if social auth  --}}
           @elseif(profile.socialAuth === 'github' || profile.socialAuth === 'google' || profile.socialAuth ===
           'facebook')
           <img src="{{ profile.avatarUrl }}" class="img-thumbnail" alt="image_{{profile.firstName}}">
-
+          {{--  if no image  --}}
           @else
-          <p class="fs-5 text-capitalize text-center">Image not available!</p>
+          <p class="fs-5 text-capitalize text-center text-danger">Image not available!</p>
           @endif
+          {{--  image rendering ends  --}}
         </div>
 
         {{--  new image preview  --}}

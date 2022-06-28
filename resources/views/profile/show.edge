@@ -16,8 +16,8 @@
   {{--  user data  --}}
   <div class="text-center">
 
-    {{--  if local auth or image updated  --}}
-    @if(profile.socialAuth === 'local' || profile.storagePrefix)
+    {{--  image rendering starts  --}}
+    @if(profile.storagePrefix)
     <img class="img-thumbnail" src="data:image/png;base64, {{ profile.$extras.imageBaseString }}"
       alt="image_{{profile.firstName}}" style="height:300px;">
     {{--  if social auth  --}}
@@ -26,8 +26,9 @@
     <img src="{{ profile.avatarUrl }}" class="img-thumbnail" alt="image_{{profile.firstName}}">
     {{--  if no image  --}}
     @else
-    <p class="fs-5 text-capitalize text-center">Image not available!</p>
+    <p class="fs-5 text-capitalize text-center text-danger">Image not available!</p>
     @endif
+    {{--  image rendering ends  --}}
 
     <h4 class="mt-4 fw-bold text-capitalize mt-2">
       {{ profile.firstName + ' ' + profile.lastName }}
@@ -78,7 +79,12 @@
     <div class="col-6 col-sm-6 col-md-4 col-lg-3">
       {{--  post card  --}}
       <a href="{{ route('post.show', { id: post.id }) }}">
-        <img src="{{ post.image_url }}" class="card-img-bottom card-img-top" alt="image1">
+        {{--  image rendering starts  --}}
+        <img class="img-thumbnail card-img-bottom card-img-top"
+          src="data:image/png;base64, {{ post.$extras.imageBaseString }}" alt="image_{{post.title}}"
+          style="height:300px;">
+        {{--  image rendering ends  --}}
+
         <div class="card-body">
           <h5 class="card-title text-center fs-6">{{ post.title.charAt(0).toUpperCase() +  post.title.slice(1) }}</h5>
         </div>

@@ -1,20 +1,21 @@
+import Drive from '@ioc:Adonis/Core/Drive'
+import Database from '@ioc:Adonis/Lucid/Database'
 import {
-  BaseModel,
+  afterFetch,
   afterFind,
+  BaseModel,
   beforeSave,
   BelongsTo,
   belongsTo,
   column,
   manyToMany,
   ManyToMany,
-  afterFetch,
 } from '@ioc:Adonis/Lucid/Orm'
-import Drive from '@ioc:Adonis/Core/Drive'
 import Tag from 'App/Models/Tag'
 import TagPost from 'App/Models/TagPost'
 import User from 'App/Models/User'
 import { DateTime } from 'luxon'
-import Database from '@ioc:Adonis/Lucid/Database'
+import path from 'path'
 
 export default class Post extends BaseModel {
   @column({ isPrimary: true })
@@ -67,13 +68,23 @@ export default class Post extends BaseModel {
 
   @afterFind()
   public static async afterFindHook(post: Post) {
-    post.$extras.imageBaseString = (await Drive.get(post.storage_prefix)).toString('base64')
+    try {
+      const imageBaseString = await Drive.get(post.storage_prefix)
+      post.$extras.imageBaseString = imageBaseString.toString('base64')
+    } catch (error) {
+      console.error(error.message)
+    }
   }
 
   @afterFetch()
   public static async afterFetchHook(posts: Post[]) {
     for (const post of posts) {
-      post.$extras.imageBaseString = (await Drive.get(post.storage_prefix)).toString('base64')
+      try {
+        const imageBaseString = await Drive.get(post.storage_prefix)
+        post.$extras.imageBaseString = imageBaseString.toString('base64')
+      } catch (error) {
+        console.error(error.message)
+      }
     }
   }
 
