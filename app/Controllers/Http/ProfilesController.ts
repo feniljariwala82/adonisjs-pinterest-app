@@ -1,4 +1,5 @@
 import Drive from '@ioc:Adonis/Core/Drive'
+import Env from '@ioc:Adonis/Core/Env'
 import { cuid } from '@ioc:Adonis/Core/Helpers'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Profile from 'App/Models/Profile'
@@ -12,6 +13,7 @@ export default class ProfilesController {
    */
   public async show({ session, response, view, params }: HttpContextContract) {
     const { id } = params
+
     try {
       const profile = await Profile.getProfileById(id)
       const html = await view.render('profile/show', { profile })
@@ -19,7 +21,7 @@ export default class ProfilesController {
     } catch (error) {
       console.error(error)
       session.flash({ error })
-      return response.redirect().back()
+      return response.redirect().toRoute('post.index')
     }
   }
 
@@ -62,9 +64,8 @@ export default class ProfilesController {
     // finding profile
     let profile: Profile
     try {
-      profile = await Profile.getProfileById(id)
+      profile = await Profile.getProfileById(parseInt(id))
     } catch (error) {
-      console.error(error)
       session.flash({ error })
       return response.redirect().back()
     }
@@ -80,20 +81,13 @@ export default class ProfilesController {
 
     // storage prefix
     let storagePrefix: string = ''
+
+    // new image name
+    let imgName: string = ''
+
     // if new image is uploaded
     if (payload.postImage) {
-      const imgName = `${cuid()}.${payload.postImage.extname}`
-
-      /**
-       * adding new image file to the uploads folder
-       */
-      try {
-        await payload.postImage.moveToDisk(auth.user!.id.toString(), { name: imgName }, 'local')
-      } catch (error) {
-        console.error(error)
-        session.flash({ error: error.message })
-        return response.redirect().toRoute('post.index')
-      }
+      imgName = `${cuid()}.${payload.postImage.extname}`
 
       // new storage prefix
       storagePrefix = path.join(auth.user!.id.toString(), imgName)
@@ -102,6 +96,23 @@ export default class ProfilesController {
     // updating user data
     try {
       const result = await User.update({ id, storagePrefix }, payload)
+
+      /**
+       * adding new image file to the uploads folder
+       */
+      if (payload.postImage) {
+        try {
+          await payload.postImage.moveToDisk(
+            auth.user!.id.toString(),
+            { name: imgName },
+            Env.get('DRIVE_DISK')
+          )
+        } catch (error) {
+          console.error(error)
+          session.flash({ error: error.message })
+          return response.redirect().toRoute('post.index')
+        }
+      }
 
       // if password is entered then redirecting user to logout
       if (payload.password) {
@@ -112,17 +123,6 @@ export default class ProfilesController {
         return response.redirect().toRoute('profile.show', { id })
       }
     } catch (error) {
-      // on error removing the image that we shifted to storage
-      if (storagePrefix) {
-        try {
-          await Drive.delete(storagePrefix)
-        } catch (error) {
-          console.error(error)
-          session.flash({ error: error.message })
-          return response.redirect().toRoute('profile.show', { id })
-        }
-      }
-
       session.flash({ error })
       return response.redirect().toRoute('profile.show', { id })
     }

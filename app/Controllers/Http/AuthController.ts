@@ -65,7 +65,7 @@ export default class AuthController {
   /**
    * Sign up method
    */
-  public async signup({ request, response, session, view }: HttpContextContract) {
+  public async signup({ request, response, session, view, auth }: HttpContextContract) {
     switch (request.method()) {
       case 'POST':
         const postSchema = schema.create({
@@ -95,9 +95,18 @@ export default class AuthController {
 
         // creating new user
         try {
-          const result = await User.createUser(payload)
-          session.flash({ success: result })
-          return response.redirect().toRoute('home')
+          const createdUser = await User.createUser(payload)
+
+          // login attempt
+          try {
+            await auth.use('web').login(createdUser)
+            session.flash({ success: 'Account created, and you are logged in' })
+            return response.redirect().toRoute('home')
+          } catch (error) {
+            console.error(error)
+            session.flash({ error: error.message })
+            return response.redirect().back()
+          }
         } catch (error) {
           session.flash({ error })
           return response.redirect().back()
@@ -176,6 +185,7 @@ export default class AuthController {
           socialAuth: GOOGLE,
         })
       } catch (error) {
+        console.error(error)
         session.flash({ error })
         return response.redirect().toRoute('auth.login')
       }

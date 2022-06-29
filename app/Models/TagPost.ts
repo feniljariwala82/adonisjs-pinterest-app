@@ -2,6 +2,7 @@ import { DateTime } from 'luxon'
 import { BaseModel, column, belongsTo, BelongsTo } from '@ioc:Adonis/Lucid/Orm'
 import Post from 'App/Models/Post'
 import Tag from 'App/Models/Tag'
+import { TransactionClientContract } from '@ioc:Adonis/Lucid/Database'
 
 export default class TagPost extends BaseModel {
   @column({ isPrimary: true })

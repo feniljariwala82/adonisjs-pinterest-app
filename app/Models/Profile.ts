@@ -1,15 +1,15 @@
+import Drive from '@ioc:Adonis/Core/Drive'
 import {
+  afterFetch,
+  afterFind,
   BaseModel,
   beforeSave,
   belongsTo,
   BelongsTo,
   column,
-  afterFetch,
-  afterFind,
 } from '@ioc:Adonis/Lucid/Orm'
 import User from 'App/Models/User'
 import { DateTime } from 'luxon'
-import Drive from '@ioc:Adonis/Core/Drive'
 
 export default class Profile extends BaseModel {
   @column({ isPrimary: true })
@@ -108,6 +108,7 @@ export default class Profile extends BaseModel {
           userQuery.preload('posts')
         })
         .firstOrFail()
+
       return Promise.resolve(profile)
     } catch (error) {
       console.error(error)

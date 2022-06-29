@@ -1,20 +1,21 @@
+import Drive from '@ioc:Adonis/Core/Drive'
+import Database from '@ioc:Adonis/Lucid/Database'
 import {
-  BaseModel,
+  afterFetch,
   afterFind,
+  BaseModel,
   beforeSave,
   BelongsTo,
   belongsTo,
   column,
   manyToMany,
   ManyToMany,
-  afterFetch,
 } from '@ioc:Adonis/Lucid/Orm'
-import Drive from '@ioc:Adonis/Core/Drive'
 import Tag from 'App/Models/Tag'
 import TagPost from 'App/Models/TagPost'
 import User from 'App/Models/User'
 import { DateTime } from 'luxon'
-import Database from '@ioc:Adonis/Lucid/Database'
+import path from 'path'
 
 export default class Post extends BaseModel {
   @column({ isPrimary: true })
@@ -67,13 +68,23 @@ export default class Post extends BaseModel {
 
   @afterFind()
   public static async afterFindHook(post: Post) {
-    post.$extras.imageBaseString = (await Drive.get(post.storage_prefix)).toString('base64')
+    try {
+      const imageBaseString = await Drive.get(post.storage_prefix)
+      post.$extras.imageBaseString = imageBaseString.toString('base64')
+    } catch (error) {
+      console.error(error.message)
+    }
   }
 
   @afterFetch()
   public static async afterFetchHook(posts: Post[]) {
     for (const post of posts) {
-      post.$extras.imageBaseString = (await Drive.get(post.storage_prefix)).toString('base64')
+      try {
+        const imageBaseString = await Drive.get(post.storage_prefix)
+        post.$extras.imageBaseString = imageBaseString.toString('base64')
+      } catch (error) {
+        console.error(error.message)
+      }
     }
   }
 
@@ -120,53 +131,19 @@ export default class Post extends BaseModel {
     // Transaction created
     const trx = await Database.transaction()
 
+    // creating post using transaction
+    let post = new Post()
     try {
-      // creating post
-      const post = new Post()
       post.title = data.title
       post.description = data.description
       post.user_id = data.id
       post.storage_prefix = data.storagePrefix
 
-      // creating a transaction
+      // using transaction
       post.useTransaction(trx)
 
-      // saving post with transaction
-      await post.save()
-
-      // finding the tags that already exists
-      const existedTags: Tag[] = await Tag.getAllByTagTitle(data.tags)
-
-      // data type to insert new tag into relationship
-      const newTags: { title: string }[] = []
-
-      // tag string array
-      const existedTagList = existedTags.map((tag) => tag.title)
-      data.tags.map((tag) => {
-        if (!existedTagList.includes(tag)) {
-          // if tag does not exist then adding it into new tags
-          newTags.push({ title: tag })
-        }
-      })
-
-      // inserting the tags that are new
-      await post.related('tags').createMany(newTags)
-
-      // creating relationships with pre-existing tags
-      try {
-        await TagPost.storePostTag(
-          post.id,
-          existedTags.map((tag) => tag.id)
-        )
-      } catch (error) {
-        // if it fails to insert data into pivot table we rollback the transaction
-        trx.rollback()
-      }
-
-      // committing the transaction
-      await trx.commit()
-
-      return Promise.resolve('Post created')
+      // saving record
+      post = await post.save()
     } catch (error) {
       // if it fails to insert data into pivot table we rollback the transaction
       trx.rollback()
@@ -174,6 +151,41 @@ export default class Post extends BaseModel {
       console.error(error)
       return Promise.reject(error.message)
     }
+
+    // finding the tags that already exists
+    const existedTags: Tag[] = await Tag.getAllByTagTitle(data.tags)
+
+    // data type to insert new tag into relationship
+    const newTags: { title: string }[] = []
+
+    // tag string array
+    const existedTagList = existedTags.map((tag) => tag.title)
+    data.tags.map((tag) => {
+      if (!existedTagList.includes(tag)) {
+        // if tag does not exist then adding it into new tags
+        newTags.push({ title: tag })
+      }
+    })
+
+    // inserting the tags that are new
+    await post.related('tags').createMany(newTags)
+
+    // creating relationships with pre-existing tags
+    try {
+      await TagPost.storePostTag(
+        post.id,
+        existedTags.map((tag) => tag.id)
+      )
+
+      await trx.commit()
+    } catch (error) {
+      await trx.rollback()
+
+      console.error(error)
+      return Promise.reject(error)
+    }
+
+    return Promise.resolve('Post created')
   }
 
   /**

@@ -21,7 +21,7 @@ export default Env.rules({
   APP_NAME: Env.schema.string(),
   CACHE_VIEWS: Env.schema.boolean(),
   SESSION_DRIVER: Env.schema.string(),
-  DRIVE_DISK: Env.schema.enum(['local'] as const),
+  DRIVE_DISK: Env.schema.enum(['local', 's3'] as const),
   NODE_ENV: Env.schema.enum(['development', 'production', 'testing'] as const),
   DB_CONNECTION: Env.schema.string(),
 
@@ -36,4 +36,11 @@ export default Env.rules({
   // facebook ally
   FACEBOOK_CLIENT_ID: Env.schema.string(),
   FACEBOOK_CLIENT_SECRET: Env.schema.string(),
+
+  // AWS
+  S3_KEY: Env.schema.string(),
+  S3_SECRET: Env.schema.string(),
+  S3_BUCKET: Env.schema.string(),
+  S3_REGION: Env.schema.string(),
+  S3_ENDPOINT: Env.schema.string.optional(),
 })
