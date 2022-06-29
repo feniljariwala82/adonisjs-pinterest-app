@@ -2,6 +2,7 @@ import Drive from '@ioc:Adonis/Core/Drive'
 import Env from '@ioc:Adonis/Core/Env'
 import { cuid } from '@ioc:Adonis/Core/Helpers'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import Database from '@ioc:Adonis/Lucid/Database'
 import Post from 'App/Models/Post'
 import PostStoreValidator from 'App/Validators/PostStoreValidator'
 import PostUpdateValidator from 'App/Validators/PostUpdateValidator'
@@ -44,15 +45,21 @@ export default class PostsController {
     // to save it as a posix path
     const storagePrefix = path.posix.join(auth.user!.id.toString(), imageName)
 
+    // transaction
+    const trx = await Database.transaction()
+
     // creating a post
     try {
-      await Post.storePost({
-        id: auth.user!.id,
-        title: payload.title,
-        description: payload.description,
-        storagePrefix,
-        tags: payload.tags.map((item) => item.trim().toLowerCase()),
-      })
+      await Post.storePost(
+        {
+          id: auth.user!.id,
+          title: payload.title,
+          description: payload.description,
+          storagePrefix,
+          tags: payload.tags.map((item) => item.trim().toLowerCase()),
+        },
+        trx
+      )
     } catch (error) {
       session.flash({ error })
       return response.redirect().back()
@@ -66,6 +73,9 @@ export default class PostsController {
         Env.get('DRIVE_DISK')
       )
     } catch (error) {
+      // if it fails to upload image then roll backing transaction
+      await trx.rollback()
+
       console.error(error)
       session.flash({ error: error.message })
       return response.redirect().back()
@@ -165,15 +175,21 @@ export default class PostsController {
       storagePrefix = path.posix.join(auth.user!.id.toString(), imgName)
     }
 
+    // transaction
+    const trx = await Database.transaction()
+
     // updating post data
     try {
-      const result = await Post.updatePost({
-        id,
-        title: payload.title,
-        description: payload.description,
-        tags: payload.tags.map((item) => item.trim().toLowerCase()),
-        storagePrefix,
-      })
+      const result = await Post.updatePost(
+        {
+          id,
+          title: payload.title,
+          description: payload.description,
+          tags: payload.tags.map((item) => item.trim().toLowerCase()),
+          storagePrefix,
+        },
+        trx
+      )
 
       /**
        * on successful attempt deleting old image and shifting new image to S3
@@ -189,6 +205,9 @@ export default class PostsController {
             Env.get('DRIVE_DISK')
           )
         } catch (error) {
+          // roll back
+          await trx.rollback()
+
           console.error(error)
           session.flash({ error: error.message })
           return response.redirect().back()
@@ -221,8 +240,11 @@ export default class PostsController {
   public async destroy({ params, session, response, bouncer }: HttpContextContract) {
     const { id } = params
 
+    // Transaction created
+    const trx = await Database.transaction()
+
     try {
-      const post = await Post.getPostById(id)
+      const post = await Post.findOrFail(parseInt(id), { client: trx })
 
       // checking authorization
       try {
@@ -232,30 +254,40 @@ export default class PostsController {
         return response.redirect().toRoute('post.index')
       }
 
-      /**
-       * Removing image
-       */
+      // deleting
       try {
-        await Drive.delete(post.storage_prefix)
+        await post.delete()
       } catch (error) {
         console.error(error)
         session.flash({ error: error.message })
         return response.redirect().toRoute('post.index')
       }
 
-      // deleting
+      /**
+       * Removing image
+       */
       try {
-        await post.delete()
-        session.flash({ success: 'Post deleted' })
-        return response.redirect().toRoute('post.index')
+        await Drive.delete(post.storage_prefix)
+
+        // committing the transaction
+        await trx.commit()
       } catch (error) {
+        // rollback delete transaction
+        await trx.rollback()
+
         console.error(error)
         session.flash({ error: error.message })
         return response.redirect().toRoute('post.index')
       }
+
+      session.flash({ success: 'Post deleted' })
+      return response.redirect().toRoute('post.index')
     } catch (error) {
+      // rollback delete transaction
+      await trx.rollback()
+
       console.error(error)
-      session.flash({ error })
+      session.flash({ error: 'Post not found' })
       return response.redirect().toRoute('post.index')
     }
   }
@@ -265,13 +297,14 @@ export default class PostsController {
 
     try {
       const post = await Post.getPostById(parseInt(id))
-      const url = await Drive.getSignedUrl(post.storage_prefix, { expiresIn: '2mins' })
+      const location = post.storage_prefix
+      const { size } = await Drive.getStats(location)
 
-      if (Env.get('NODE_ENV') === 'development') {
-        return response.redirect(`http://${Env.get('HOST')}:${Env.get('PORT')}${url}`)
-      } else {
-        return response.redirect(url)
-      }
+      response.type(path.extname(location))
+      response.header('Content-length', size.toString())
+      response.header('Content-Disposition', `attachment; filename=${path.basename(location)}`)
+
+      return response.stream(await Drive.getStream(location))
     } catch (error) {
       console.error(error)
       session.flash({ error: error.message })

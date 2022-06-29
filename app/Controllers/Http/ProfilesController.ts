@@ -1,7 +1,7 @@
-import Drive from '@ioc:Adonis/Core/Drive'
 import Env from '@ioc:Adonis/Core/Env'
 import { cuid } from '@ioc:Adonis/Core/Helpers'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import Database from '@ioc:Adonis/Lucid/Database'
 import Profile from 'App/Models/Profile'
 import User from 'App/Models/User'
 import ProfileUpdateValidator from 'App/Validators/ProfileUpdateValidator'
@@ -90,12 +90,15 @@ export default class ProfilesController {
       imgName = `${cuid()}.${payload.postImage.extname}`
 
       // new storage prefix
-      storagePrefix = path.join(auth.user!.id.toString(), imgName)
+      storagePrefix = path.posix.join(auth.user!.id.toString(), imgName)
     }
+
+    // transaction
+    const trx = await Database.transaction()
 
     // updating user data
     try {
-      const result = await User.update({ id, storagePrefix }, payload)
+      const result = await User.update({ id, storagePrefix }, payload, trx)
 
       /**
        * adding new image file to the uploads folder
@@ -108,6 +111,9 @@ export default class ProfilesController {
             Env.get('DRIVE_DISK')
           )
         } catch (error) {
+          // roll back the whole transaction
+          await trx.rollback()
+
           console.error(error)
           session.flash({ error: error.message })
           return response.redirect().toRoute('post.index')

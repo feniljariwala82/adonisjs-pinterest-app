@@ -92,6 +92,7 @@ export default class Profile extends BaseModel {
         userId: data.userId,
         avatarUrl: data.avatarUrl && data.avatarUrl,
         socialAuth: data.socialAuth && data.socialAuth,
+        storagePrefix: data.storagePrefix && data.storagePrefix,
       })
       return Promise.resolve('Profile saved')
     } catch (error) {

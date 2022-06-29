@@ -1,5 +1,5 @@
 import Drive from '@ioc:Adonis/Core/Drive'
-import Database from '@ioc:Adonis/Lucid/Database'
+import Database, { TransactionClientContract } from '@ioc:Adonis/Lucid/Database'
 import {
   afterFetch,
   afterFind,
@@ -15,7 +15,6 @@ import Tag from 'App/Models/Tag'
 import TagPost from 'App/Models/TagPost'
 import User from 'App/Models/User'
 import { DateTime } from 'luxon'
-import path from 'path'
 
 export default class Post extends BaseModel {
   @column({ isPrimary: true })
@@ -127,10 +126,7 @@ export default class Post extends BaseModel {
    * @description the method to create new post
    * @returns Promise
    */
-  public static async storePost(data: StorePostType) {
-    // Transaction created
-    const trx = await Database.transaction()
-
+  public static async storePost(data: StorePostType, trx: TransactionClientContract) {
     // creating post using transaction
     let post = new Post()
     try {
@@ -146,14 +142,23 @@ export default class Post extends BaseModel {
       post = await post.save()
     } catch (error) {
       // if it fails to insert data into pivot table we rollback the transaction
-      trx.rollback()
+      await trx.rollback()
 
       console.error(error)
       return Promise.reject(error.message)
     }
 
     // finding the tags that already exists
-    const existedTags: Tag[] = await Tag.getAllByTagTitle(data.tags)
+    let existedTags: Tag[] = []
+    try {
+      existedTags = await Tag.getAllByTagTitle(data.tags)
+    } catch (error) {
+      // if it fails to find tags
+      await trx.rollback()
+
+      console.error(error)
+      return Promise.reject(error)
+    }
 
     // data type to insert new tag into relationship
     const newTags: { title: string }[] = []
@@ -168,22 +173,32 @@ export default class Post extends BaseModel {
     })
 
     // inserting the tags that are new
-    await post.related('tags').createMany(newTags)
+    try {
+      await post.related('tags').createMany(newTags)
+    } catch (error) {
+      // roll back on failure on creating tags using relationship method
+      await trx.rollback()
+
+      console.error(error)
+      return Promise.reject(error)
+    }
 
     // creating relationships with pre-existing tags
     try {
       await TagPost.storePostTag(
         post.id,
-        existedTags.map((tag) => tag.id)
+        existedTags.map((tag) => tag.id),
+        trx
       )
-
-      await trx.commit()
     } catch (error) {
       await trx.rollback()
 
       console.error(error)
       return Promise.reject(error)
     }
+
+    // at the end committing transaction
+    await trx.commit()
 
     return Promise.resolve('Post created')
   }
@@ -219,17 +234,21 @@ export default class Post extends BaseModel {
    * @param data data to be updated
    * @returns Promise
    */
-  public static async updatePost(data: UpdatePostType) {
-    const trx = await Database.transaction()
-
+  public static async updatePost(data: UpdatePostType, trx: TransactionClientContract) {
     // preloading post data
     let post: Post | null
     try {
       post = await this.query({ client: trx }).where('id', data.id).preload('tags').first()
       if (!post) {
+        // roll back
+        await trx.rollback()
+
         return Promise.reject('Post not found')
       }
     } catch (error) {
+      // roll back
+      await trx.rollback()
+
       console.error(error)
       return Promise.reject(error.message)
     }
@@ -238,7 +257,7 @@ export default class Post extends BaseModel {
     post.title = data.title
     post.description = data.description
 
-    // if image name exists then saving new image name
+    // if image prefix exists then saving new image storage prefix
     if (data.storagePrefix) {
       post.storage_prefix = data.storagePrefix
     }
@@ -255,15 +274,16 @@ export default class Post extends BaseModel {
     try {
       await post.related('tags').detach(removedTagIds)
     } catch (error) {
+      // roll back
+      await trx.rollback()
+
       console.error(error)
       return Promise.reject(error.message)
     }
 
+    // saving updated state
     try {
-      // saving updated state
       post = await post.save()
-
-      await trx.commit()
     } catch (error) {
       console.error(error)
       return Promise.reject(error.message)
@@ -275,7 +295,7 @@ export default class Post extends BaseModel {
       existedTags = await Tag.getAllByTagTitle(data.tags)
     } catch (error) {
       // rollback whole update transaction on failure
-      trx.rollback()
+      await trx.rollback()
 
       console.error(error)
       return Promise.reject(error)
@@ -301,7 +321,7 @@ export default class Post extends BaseModel {
       await post.related('tags').createMany(newTags)
     } catch (error) {
       // rollback whole update transaction on failure
-      trx.rollback()
+      await trx.rollback()
 
       console.error(error)
       return Promise.reject(error)
@@ -311,16 +331,20 @@ export default class Post extends BaseModel {
     try {
       await TagPost.storePostTag(
         post.id,
-        existedTags.map((tag) => tag.id)
+        existedTags.map((tag) => tag.id),
+        trx
       )
     } catch (error) {
       // rollback whole update transaction on failure
-      trx.rollback()
+      await trx.rollback()
 
       // throwing error
       console.error(error)
       return Promise.reject(error)
     }
+
+    // at the end committing the transaction
+    await trx.commit()
 
     return Promise.resolve('Post updated')
   }
