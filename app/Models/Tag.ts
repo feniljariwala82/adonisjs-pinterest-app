@@ -86,7 +86,7 @@ export default class Tag extends BaseModel {
       return Promise.resolve(fetchedTags)
     } catch (error) {
       console.error(error)
-      return Promise.reject(error)
+      return Promise.reject(error.message)
     }
   }
 }

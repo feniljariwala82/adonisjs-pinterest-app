@@ -1,6 +1,6 @@
 import Drive from '@ioc:Adonis/Core/Drive'
-import Database from '@ioc:Adonis/Lucid/Database'
 import Hash from '@ioc:Adonis/Core/Hash'
+import Database, { TransactionClientContract } from '@ioc:Adonis/Lucid/Database'
 import {
   BaseModel,
   beforeSave,
@@ -84,7 +84,9 @@ export default class User extends BaseModel {
     // checking if user exists or not
     try {
       const exists = await this.findBy('email', user.email)
-      if (exists) return Promise.reject('User already exists')
+      if (exists) {
+        return Promise.reject('User already exists')
+      }
     } catch (error) {
       console.error(error)
       return Promise.reject(error.message)
@@ -143,16 +145,13 @@ export default class User extends BaseModel {
      */
     let user: User | null
     try {
-      user = await this.query().where('email', email).first()
+      user = await this.query().where('email', email).preload('profile').first()
     } catch (error) {
       console.error(error)
       return Promise.reject(error.message)
     }
 
     if (user) {
-      // if user exists then checking social auth
-      await user.load('profile')
-
       /**
        * if user already exists with different social auth, then
        * throwing error
@@ -176,7 +175,7 @@ export default class User extends BaseModel {
         await Profile.updateOrCreateProfile({
           firstName: profile.firstName,
           lastName: profile.lastName,
-          avatarUrl: profile.avatarUrl ? profile.avatarUrl : undefined,
+          avatarUrl: profile.avatarUrl && profile.avatarUrl,
           socialAuth: profile.socialAuth,
           userId: user.id,
         })
@@ -197,17 +196,16 @@ export default class User extends BaseModel {
    */
   public static update = async (
     data: { id: number; storagePrefix?: string },
-    updateData: UpdateUser
+    updateData: UpdateUser,
+    trx: TransactionClientContract
   ) => {
     const { id, storagePrefix } = data
     const { firstName, lastName, password } = updateData
 
-    const trx = await Database.transaction()
-
     // checking whether the user exists or not
     let user: User
     try {
-      user = await User.query({ client: trx }).where('id', id).preload('profile').firstOrFail()
+      user = await User.query().where('id', id).preload('profile').firstOrFail()
     } catch (error) {
       console.error(error)
       return Promise.reject('User not found')
@@ -220,11 +218,11 @@ export default class User extends BaseModel {
 
     // saving user data
     try {
-      await user.save()
-
-      // committing the transaction
-      await trx.commit()
+      await user.useTransaction(trx).save()
     } catch (error) {
+      // if user saving fails
+      await trx.rollback()
+
       console.error(error)
       return Promise.reject(error.message)
     }
@@ -244,7 +242,7 @@ export default class User extends BaseModel {
       }
 
       try {
-        await profile.save()
+        await profile.useTransaction(trx).save()
       } catch (error) {
         // if profile saving fails
         await trx.rollback()
@@ -253,7 +251,7 @@ export default class User extends BaseModel {
         return Promise.reject(error.message)
       }
     } catch (error) {
-      // if profile saving fails
+      // if finding profile fails
       await trx.rollback()
 
       console.error(error)
@@ -267,10 +265,16 @@ export default class User extends BaseModel {
       try {
         await Drive.delete(user.profile.storagePrefix)
       } catch (error) {
+        // if profile get fails
+        await trx.rollback()
+
         console.error(error)
         return Promise.reject(error.message)
       }
     }
+
+    // at the end committing the transaction
+    await trx.commit()
 
     return Promise.resolve('Profile updated')
   }

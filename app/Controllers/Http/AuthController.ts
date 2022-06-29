@@ -273,7 +273,6 @@ export default class AuthController {
        * Login user using the web guard
        */
       await auth.use('web').login(user)
-
       session.flash({ success: 'Logged In' })
       return response.redirect().toRoute('post.index')
     } catch (error) {

@@ -4,6 +4,7 @@ interface StoreProfileType {
   userId?: number
   avatarUrl?: string
   socialAuth?: string
+  storagePrefix?: string
 }
 
 interface StorePostType {
