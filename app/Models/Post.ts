@@ -1,5 +1,5 @@
 import Drive from '@ioc:Adonis/Core/Drive'
-import Database, { TransactionClientContract } from '@ioc:Adonis/Lucid/Database'
+import { TransactionClientContract } from '@ioc:Adonis/Lucid/Database'
 import {
   afterFetch,
   afterFind,
@@ -106,7 +106,7 @@ export default class Post extends BaseModel {
    * @param userId user id
    * @returns Promise
    */
-  public static async getAllByUserId(userId: number) {
+  public static async getAllByUserIdWithQs(userId: number) {
     try {
       const user = await User.query()
         .where('id', userId)
@@ -347,5 +347,20 @@ export default class Post extends BaseModel {
     await trx.commit()
 
     return Promise.resolve('Post updated')
+  }
+
+  /**
+   * @description finds distinct posts
+   * @param ids id field of post
+   * @returns Promise
+   */
+  public static findAll = async (ids: number[]) => {
+    try {
+      const posts = await this.query().whereIn('id', ids)
+      return Promise.resolve(posts)
+    } catch (error) {
+      console.error(error)
+      return Promise.reject(error.message)
+    }
   }
 }

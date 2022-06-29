@@ -1,5 +1,4 @@
 import Route from '@ioc:Adonis/Core/Route'
-import './testingRoutes'
 
 // Authentication routes
 Route.group(() => {

@@ -14,7 +14,6 @@
   @endif
 
   <div class="row mt-4 border rounded p-4">
-
     {{--  image container  --}}
     <div class="col-12 col-sm-12 col-md-6">
       <img src="data:image/png;base64, {{ post.$extras.imageBaseString }}" class="card-img-bottom card-img-top"
@@ -97,4 +96,40 @@
       </div>
     </div>
   </div>
-  @endsection
+
+
+
+  <h3 class="mt-4 text-primary">
+    <i class="fa-solid fa-circle-nodes"></i>
+    More Related
+  </h3>
+
+  <hr>
+
+  {{--  posts by the user starts  --}}
+  <div class="row justify-content-center align-items-center" data-masonry='{"percentPosition": true }'>
+    @each(post in posts)
+    <div class="col-6 col-sm-6 col-md-4 col-lg-3">
+      {{--  post card  --}}
+      <a href="{{ route('post.show', { id: post.id }) }}">
+        {{--  image rendering starts  --}}
+        <img class="img-thumbnail card-img-bottom card-img-top"
+          src="data:image/png;base64, {{ post.$extras.imageBaseString }}" alt="image_{{post.title}}">
+        {{--  image rendering ends  --}}
+
+        <div class="card-body">
+          <h5 class="card-title text-center fs-6">{{ post.title.charAt(0).toUpperCase() +  post.title.slice(1) }}</h5>
+        </div>
+      </a>
+    </div>
+    @else
+    <div class="m-4 text-center">
+      <i class="fa-solid fa-circle-exclamation text-warning fa-2x"></i>
+      <p class="fs-4 text-warning">No relative posts found!</p>
+    </div>
+    @endeach
+  </div>
+  {{--  posts by the user ends  --}}
+
+</div>
+@endsection

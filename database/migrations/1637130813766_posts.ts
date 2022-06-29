@@ -10,6 +10,7 @@ export default class Posts extends BaseSchema {
       table.string('description', 400).notNullable()
       table.integer('user_id').unsigned().references('users.id').onDelete('CASCADE').notNullable()
       table.string('storage_prefix').notNullable()
+      // TODO remove this field
       table.string('image_url').nullable()
       table.timestamp('created_at', { useTz: true })
       table.timestamp('updated_at', { useTz: true })
