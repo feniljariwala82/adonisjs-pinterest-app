@@ -50,20 +50,11 @@
           @endeach
         </div>
 
-        {{--  user details  --}}
-        <h4 class="mt-4">
-          Created By
-          <a class="text-primary text-capitalize" href="{{ route('profile.show', { id: post.user.profile.id }) }}">
-            {{ post.user.profile.firstName +' ' +  post.user.profile.lastName }}
-          </a>
-        </h4>
-
         {{--  showing edit and delete button if the post is posted by the user  --}}
-        @if(auth.user && auth.user.id === post.user_id)
 
         {{--  Buttons  --}}
-
         <div id="actions" class="mt-4 d-flex">
+
           {{--  edit button starts  --}}
           @can('PostPolicy.edit', post)
           <a class="btn btn-warning mx-1 text-white" href="{{ route('post.edit', { id: post.id }) }}">
@@ -96,7 +87,14 @@
           </a>
           {{--  download button ends  --}}
         </div>
-        @endif
+
+        {{--  user details  --}}
+        <h5 class="mt-4">
+          Created By
+          <a class="text-primary text-capitalize" href="{{ route('profile.show', { id: post.user.profile.id }) }}">
+            {{ post.user.profile.firstName +' ' +  post.user.profile.lastName }}
+          </a>
+        </h5>
 
       </div>
     </div>
