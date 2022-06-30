@@ -1,0 +1,9 @@
+{{--  post card item starts  --}}
+<a href="{{ route('post.show', {id: post.id}) }}">
+  <img src="data:image/png;base64, {{ post.$extras.imageBaseString }}" class="card-img-bottom card-img-top"
+    loading='lazy' alt="image_{{post.title}}">
+  <div class="card-body">
+    <h5 class="card-title text-center fs-6">{{ post.title.charAt(0).toUpperCase() +  post.title.slice(1) }}</h5>
+  </div>
+</a>
+{{--  post card item ends  --}}

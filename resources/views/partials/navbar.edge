@@ -40,8 +40,8 @@
         @endif
       </ul>
 
-      <form class="d-flex">
-        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+      <form action="{{ route('home') }}" method="get" class="d-flex">
+        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name="search">
         <button class="btn btn-outline-primary" type="submit">Search</button>
       </form>
     </div>

@@ -29,8 +29,6 @@
         </div>
       </div>
 
-
-
       {{--  last name  --}}
       <div class="col-12 col-md-5">
         <div class="form-floating mb-3">
@@ -46,8 +44,6 @@
           {{--  last name error ends --}}
         </div>
       </div>
-
-
 
       {{--  email  --}}
       <div class="col-12 col-md-5">
@@ -65,7 +61,6 @@
           {{--  email error ends --}}
         </div>
       </div>
-
 
       {{--  password  --}}
       <div class="col-12 col-md-5">
@@ -85,8 +80,16 @@
 
       {{--  buttons  --}}
       <div class="col-12 col-md-5">
-        <button type="submit" class="btn btn-secondary">Signup</button>
-        <a class="btn btn-primary" href="{{ route('auth.login') }}">Login</a>
+
+        <button type="submit" class="btn btn-secondary">
+          Signup
+          <i class="fa-solid fa-user-plus ms-2"></i>
+        </button>
+
+        <a class="btn btn-primary" href="{{ route('auth.login') }}">
+          Login
+          <i class="fa-solid fa-right-to-bracket ms-1"></i>
+        </a>
 
         <script>
           $(document).ready(() => {

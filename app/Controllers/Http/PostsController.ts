@@ -7,6 +7,7 @@ import Post from 'App/Models/Post'
 import PostStoreValidator from 'App/Validators/PostStoreValidator'
 import PostUpdateValidator from 'App/Validators/PostUpdateValidator'
 import path from 'path'
+import TagPost from 'App/Models/TagPost'
 
 export default class PostsController {
   /**
@@ -14,7 +15,7 @@ export default class PostsController {
    */
   public async index({ auth, session, response, view }: HttpContextContract) {
     try {
-      const user = await Post.getAllByUserId(auth.user!.id)
+      const user = await Post.getAllByUserIdWithQs(auth.user!.id)
       const html = await view.render('post/index', { posts: user?.posts })
       return html
     } catch (error) {
@@ -90,16 +91,33 @@ export default class PostsController {
    */
   public async show({ params, view, session, response }: HttpContextContract) {
     const { id } = params
+    const postId = parseInt(id)
 
-    // fetching particular post
     try {
-      const post = await Post.getPostById(parseInt(id))
-      const html = await view.render('post/show', { post })
+      // fetching particular post
+      const post = await Post.getPostById(postId)
+
+      // finding relative posts
+      const tagPosts = await TagPost.findRelativePosts(
+        post.tags.map((tag) => tag.id),
+        postId
+      )
+
+      // finding unique post ids
+      const uniquePostIds = [...new Set(tagPosts.map((item) => item.post.id))]
+
+      // finding distinct posts
+      const posts = await Post.findAll(uniquePostIds)
+
+      const html = await view.render('post/show', {
+        post,
+        posts,
+      })
       return html
     } catch (error) {
       console.error(error)
       session.flash({ error })
-      return response.redirect().toRoute('home')
+      return response.redirect().toRoute('post.index')
     }
   }
 

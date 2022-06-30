@@ -9,10 +9,10 @@ export default class TagPost extends BaseModel {
   public id: number
 
   @column()
-  public tag_id: number
+  public post_id: number
 
   @column()
-  public post_id: number
+  public tag_id: number
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
@@ -75,11 +75,30 @@ export default class TagPost extends BaseModel {
         // on failure roll back
         await trx.rollback()
 
-        console.log(error)
+        console.error(error)
         return Promise.reject(error.message)
       }
     }
 
     return Promise.resolve('Post tags created')
+  }
+
+  /**
+   * @description finds relative posts for individual post
+   * @param tagIds tag_id array
+   * @param postId post_id
+   * @returns Promise
+   */
+  public static findRelativePosts = async (tagIds: number[], postId: number) => {
+    try {
+      const tagPosts = await this.query()
+        .whereIn('tag_id', tagIds)
+        .andWhereNot('post_id', postId)
+        .preload('post')
+      return Promise.resolve(tagPosts)
+    } catch (error) {
+      console.error(error)
+      return Promise.reject(error.message)
+    }
   }
 }

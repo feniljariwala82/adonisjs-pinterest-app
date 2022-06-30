@@ -43,8 +43,14 @@
 
       {{--  buttons starts --}}
       <div class="col-12 col-md-5">
-        <button class="btn btn-primary" type="submit" id="loginBtn">Login</button>
-        <a type="button" class="btn btn-secondary" href="{{ route('auth.signup') }}">Signup</a>
+        <button class="btn btn-primary" type="submit" id="loginBtn">
+          Login
+          <i class="fa-solid fa-right-to-bracket ms-1"></i>
+        </button>
+        <a type="button" class="btn btn-secondary" href="{{ route('auth.signup') }}">
+          Signup
+          <i class="fa-solid fa-user-plus ms-2"></i>
+        </a>
 
         <script>
           $(document).ready(() => {

@@ -73,7 +73,7 @@
     </div>
   </div>
 
-  {{--  Showing all the posts by the user  --}}
+  {{--  posts by the user starts  --}}
   <div class="row mt-4 justify-content-center align-items-center" data-masonry='{"percentPosition": true }'>
     @each(post in profile.user.posts)
     <div class="col-6 col-sm-6 col-md-4 col-lg-3">
@@ -97,6 +97,7 @@
     </div>
     @endeach
   </div>
+  {{--  posts by the user ends  --}}
 </div>
 
 <script>
