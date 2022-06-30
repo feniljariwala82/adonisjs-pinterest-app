@@ -1,5 +1,5 @@
 import Drive from '@ioc:Adonis/Core/Drive'
-import Database, { TransactionClientContract } from '@ioc:Adonis/Lucid/Database'
+import { TransactionClientContract } from '@ioc:Adonis/Lucid/Database'
 import {
   afterFetch,
   afterFind,
