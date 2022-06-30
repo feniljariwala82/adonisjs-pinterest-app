@@ -31,7 +31,7 @@
     {{--  image rendering ends  --}}
 
     <h4 class="mt-4 fw-bold text-capitalize mt-2">
-      {{ profile.firstName + ' ' + profile.lastName }}
+      {{ profile.fullName }}
     </h4>
 
     <h5 class="fw-normal mt-2">
@@ -73,6 +73,13 @@
     </div>
   </div>
 
+  <h3 class="mt-4 text-primary">
+    <i class="fa-solid fa-seedling"></i>
+    Posts by <span><strong class="text-capitalize">{{ profile.fullName }}</strong></span>
+  </h3>
+
+  <hr>
+
   {{--  posts by the user starts  --}}
   <div class="row mt-4 justify-content-center align-items-center" data-masonry='{"percentPosition": true }'>
     @each(post in profile.user.posts)
@@ -81,8 +88,7 @@
       <a href="{{ route('post.show', { id: post.id }) }}">
         {{--  image rendering starts  --}}
         <img class="img-thumbnail card-img-bottom card-img-top"
-          src="data:image/png;base64, {{ post.$extras.imageBaseString }}" alt="image_{{post.title}}"
-          style="height:300px;">
+          src="data:image/png;base64, {{ post.$extras.imageBaseString }}" alt="image_{{post.title}}">
         {{--  image rendering ends  --}}
 
         <div class="card-body">

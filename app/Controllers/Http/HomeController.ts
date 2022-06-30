@@ -10,8 +10,12 @@ export default class HomeController {
 
     try {
       const posts = await Post.query()
-        .where('title', 'like', `%${search}%`)
-        .orWhere('description', 'like', `%${search}%`)
+        .if(typeof search === 'string' || search instanceof String, (queryBuilder) => {
+          queryBuilder.where('title', 'like', `%${search}%`)
+          queryBuilder.orWhere('description', 'like', `%${search}%`)
+        })
+        .orderBy('created_at', 'desc')
+        .select('*')
 
       const html = await view.render('welcome', { posts })
       return html

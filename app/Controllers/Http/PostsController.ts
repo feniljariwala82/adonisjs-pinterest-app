@@ -244,7 +244,7 @@ export default class PostsController {
       }
 
       session.flash({ success: result })
-      return response.redirect().toRoute('post.index')
+      return response.redirect().toRoute('post.show', { id })
     } catch (error) {
       console.error(error)
       session.flash({ error })

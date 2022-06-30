@@ -105,12 +105,19 @@
       const regexResult = /^[a-zA-Z]+$/.test(value);
       if (!regexResult) {
         // appending error alert
-        alert('Tags can contain alphabets with no space only')
+        alert('Tags can only contain alphabets with no space only')
         return
       }
 
       // increasing index on validation passed
       const i = index
+
+      // checking if tag exists or not
+      const tagIndex = tags.findIndex(tag => tag === value)
+      if (tagIndex > -1) {
+        alert('Tags already exists')
+        return
+      }
 
       tags.push(value)
       appendTagInput(i, value)

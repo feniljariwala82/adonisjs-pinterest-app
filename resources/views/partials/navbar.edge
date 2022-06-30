@@ -42,8 +42,13 @@
 
       <form action="{{ route('home') }}" method="get" class="d-flex">
         <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name="search">
-        <button class="btn btn-outline-primary" type="submit">Search</button>
+        <button class="btn btn-outline-primary" type="submit">
+          Search
+        </button>
       </form>
+
+      <a class="btn btn-outline-info ms-1" href="{{ route('home') }}">Reset</a>
+
     </div>
   </div>
 </nav>
