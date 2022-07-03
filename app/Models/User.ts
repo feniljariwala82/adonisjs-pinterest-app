@@ -1,24 +1,18 @@
+import Drive from '@ioc:Adonis/Core/Drive'
 import Hash from '@ioc:Adonis/Core/Hash'
-import { BaseModel, beforeSave, column, hasMany, HasMany, computed } from '@ioc:Adonis/Lucid/Orm'
+import Database, { TransactionClientContract } from '@ioc:Adonis/Lucid/Database'
+import {
+  BaseModel,
+  beforeSave,
+  column,
+  hasMany,
+  HasMany,
+  hasOne,
+  HasOne,
+} from '@ioc:Adonis/Lucid/Orm'
 import Post from 'App/Models/Post'
+import Profile from 'App/Models/Profile'
 import { DateTime } from 'luxon'
-import path from 'path'
-import Application from '@ioc:Adonis/Core/Application'
-import fs from 'fs'
-
-type CreateUser = {
-  firstName: string
-  lastName: string
-  email: string
-  password: string
-}
-
-type UpdateUser = {
-  firstName?: string
-  lastName?: string
-  email?: string
-  password?: string
-}
 
 export default class User extends BaseModel {
   @column({ isPrimary: true })
@@ -32,24 +26,6 @@ export default class User extends BaseModel {
 
   @column()
   public rememberMeToken?: string
-
-  @column()
-  public first_name: string
-
-  @column()
-  public last_name: string
-
-  @column()
-  public full_name: string
-
-  @column()
-  public avatar_name: string
-
-  @column()
-  public avatar_url: string
-
-  @column()
-  public social_auth: string
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
@@ -65,14 +41,10 @@ export default class User extends BaseModel {
   //   }
   // }
 
-  // before saving lower casing all names
+  // before saving lower casing all column values
   @beforeSave()
   public static async beforeSave(user: User) {
-    user.first_name = user.first_name.toLocaleLowerCase().trim()
-    user.last_name = user.last_name.toLocaleLowerCase().trim()
-    user.email = user.email.toLocaleLowerCase().trim()
-    user.full_name =
-      user.first_name.toLocaleLowerCase().trim() + ' ' + user.last_name.toLocaleLowerCase().trim()
+    user.email = user.email.toLocaleLowerCase()
   }
 
   // user has many posts
@@ -81,14 +53,18 @@ export default class User extends BaseModel {
   })
   public posts: HasMany<typeof Post>
 
+  // user has one profile
+  @hasOne(() => Profile, { foreignKey: 'userId', localKey: 'id' })
+  public profile: HasOne<typeof Profile>
+
   /**
    * @description Get all user's post
    * @param id id of the user
    * @returns Promise
    */
-  public static async getAll(id: number) {
+  public static getAll = async (id: number) => {
     try {
-      let results = await this.query().where('id', id).preload('posts').first()
+      const results = await this.query().where('id', id).preload('posts').first()
       return Promise.resolve(results)
     } catch (error) {
       console.error(error)
@@ -101,68 +77,139 @@ export default class User extends BaseModel {
    * @param user User data
    * @returns Promise
    */
-  public static async createUser(user: CreateUser) {
+  public static createUser = async (user: CreateUser) => {
+    // Transaction created
+    const trx = await Database.transaction()
+
     // checking if user exists or not
     try {
-      let exists = await this.findBy('email', user.email)
-      if (exists) return Promise.reject('User already exists')
+      const exists = await this.findBy('email', user.email)
+      if (exists) {
+        return Promise.reject('User already exists')
+      }
     } catch (error) {
       console.error(error)
       return Promise.reject(error.message)
     }
 
     // creating user
+    let createdUser = new User()
     try {
-      await this.create({
-        email: user.email,
-        password: await Hash.make(user.password.trim()),
-        first_name: user.firstName,
-        last_name: user.lastName,
-      })
-      return Promise.resolve('User created')
+      createdUser.email = user.email
+      createdUser.password = await Hash.make(user.password.trim())
+
+      // using transaction
+      createdUser.useTransaction(trx)
+
+      // saving record
+      createdUser = await createdUser.save()
+
+      // committing transaction
+      await trx.commit()
     } catch (error) {
+      // rollback whole transaction
+      await trx.rollback()
+
       console.error(error)
       return Promise.reject(error.message)
+    }
+
+    // creating profile
+    try {
+      await Profile.updateOrCreateProfile({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        userId: createdUser.id,
+      })
+
+      return Promise.resolve(createdUser)
+    } catch (error) {
+      // rollback whole transaction
+      await trx.rollback()
+
+      console.error(error)
+      return Promise.reject(error)
     }
   }
 
   /**
-   * @description the method to update the user profile
-   * @param id id of the user profile
-   * @param updateData new data
+   * @description method to create user with social auth provider
+   * @param email query string email
+   * @param profile profile data
    * @returns Promise
    */
-  public static async update(id: number, updateData: UpdateUser, imageName?: string) {
-    const { firstName, lastName, email, password } = updateData
+  public static createSocialAuthUser = async (email: string, profile: StoreProfileType) => {
+    /**
+     * 1. fetching whether user exists or not
+     * 2. checking if user exists with different auth or not
+     */
+    let user: User | null
+    try {
+      user = await this.query().where('email', email).preload('profile').first()
+    } catch (error) {
+      console.error(error)
+      return Promise.reject(error.message)
+    }
 
-    console.log(updateData)
+    if (user) {
+      /**
+       * if user already exists with different social auth, then
+       * throwing error
+       */
+      if (user.profile.socialAuth !== profile.socialAuth) {
+        const error = 'User already exists with this email'
+        console.error(error)
+        return Promise.reject(error)
+      }
+    } else {
+      // if does not exists then creating new one
+      try {
+        user = await this.create({ email })
+      } catch (error) {
+        console.error(error)
+        return Promise.reject(error.message)
+      }
+
+      // creating profile
+      try {
+        await Profile.updateOrCreateProfile({
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          avatarUrl: profile.avatarUrl && profile.avatarUrl,
+          socialAuth: profile.socialAuth,
+          userId: user.id,
+        })
+      } catch (error) {
+        console.error(error)
+        return Promise.reject(error.message)
+      }
+    }
+
+    return Promise.resolve(user)
+  }
+
+  /**
+   * @description the method to update the user profile
+   * @param data
+   * @param updateData
+   * @returns Promise
+   */
+  public static update = async (
+    data: { id: number; storagePrefix?: string },
+    updateData: UpdateUser,
+    trx: TransactionClientContract
+  ) => {
+    const { id, storagePrefix } = data
+    const { firstName, lastName, password } = updateData
 
     // checking whether the user exists or not
     let user: User
     try {
-      user = await User.findOrFail(id)
+      user = await User.query().where('id', id).preload('profile').firstOrFail()
     } catch (error) {
       console.error(error)
       return Promise.reject('User not found')
     }
-
-    /**
-     * Removing old image if new image provided
-     */
-    if (imageName && user.avatar_url) {
-      fs.unlink(Application.tmpPath(path.join('/uploads/' + user.avatar_url)), (error) => {
-        if (error) {
-          console.error(error)
-          return Promise.reject(error.message)
-        }
-      })
-    }
-
-    // updating the user data
-    user.first_name = firstName ? firstName : user.first_name
-    user.last_name = lastName ? lastName : user.last_name
-    user.email = email ? email : user.email
-    user.avatar_url = imageName ? imageName : user.avatar_url
 
     // for password
     if (password) {
@@ -171,9 +218,77 @@ export default class User extends BaseModel {
 
     // saving user data
     try {
-      let some = await user.save()
-      console.log(some)
-      return Promise.resolve('User updated')
+      await user.useTransaction(trx).save()
+    } catch (error) {
+      // if user saving fails
+      await trx.rollback()
+
+      console.error(error)
+      return Promise.reject(error.message)
+    }
+
+    // updating profile
+    try {
+      const profile = await Profile.getProfileById(user.profile.id)
+
+      if (firstName) {
+        profile.firstName = firstName
+      }
+      if (lastName) {
+        profile.lastName = lastName
+      }
+      if (storagePrefix) {
+        profile.storagePrefix = storagePrefix
+      }
+
+      try {
+        await profile.useTransaction(trx).save()
+      } catch (error) {
+        // if profile saving fails
+        await trx.rollback()
+
+        console.error(error)
+        return Promise.reject(error.message)
+      }
+    } catch (error) {
+      // if finding profile fails
+      await trx.rollback()
+
+      console.error(error)
+      return Promise.reject(error)
+    }
+
+    /**
+     * Removing an old image if a new image provided
+     */
+    if (user.profile.storagePrefix && storagePrefix) {
+      try {
+        await Drive.delete(user.profile.storagePrefix)
+      } catch (error) {
+        // if profile get fails
+        await trx.rollback()
+
+        console.error(error)
+        return Promise.reject(error.message)
+      }
+    }
+
+    // at the end committing the transaction
+    await trx.commit()
+
+    return Promise.resolve('Profile updated')
+  }
+
+  public static getUserById = async (id: number) => {
+    try {
+      const user = await this.query()
+        .where('id', id)
+        .preload('profile')
+        .preload('posts', (postQuery) => {
+          postQuery.orderBy('created_at', 'desc')
+        })
+        .firstOrFail()
+      return Promise.resolve(user)
     } catch (error) {
       console.error(error)
       return Promise.reject(error.message)

@@ -34,7 +34,8 @@
       "@adonisjs/lucid",
       "@adonisjs/auth",
       "@adonisjs/bouncer",
-      "@adonisjs/ally"
+      "@adonisjs/ally",
+      "@adonisjs/drive-s3"
     ]
   }
 }

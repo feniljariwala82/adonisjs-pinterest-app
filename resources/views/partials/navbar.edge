@@ -11,19 +11,19 @@
         {{--  if condition  --}}
         @if(auth.isLoggedIn)
         <li class="nav-item">
-          <a class="nav-link active" aria-current="page" href="{{ route('post.index') }}">Posts</a>
-        </li>
-        <li class="nav-item">
           <a class="nav-link active" aria-current="page" href="{{ route('post.create') }}">Create</a>
         </li>
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button"
             data-bs-toggle="dropdown" aria-expanded="false">
-            {{ auth.user.first_name.charAt(0).toUpperCase() + auth.user.first_name.slice(1) }}
+            {{ profile.firstName.charAt(0).toUpperCase() + profile.firstName.slice(1) }}
           </a>
           <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
             <li>
-              <a class="dropdown-item" href="{{ route('profile.index', { email: auth.user.email }) }}">Profile</a>
+              <a class="dropdown-item" href="{{ route('profile.show', { id: profile.id }) }}">Profile</a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{{ route('post.index') }}">Posts</a>
             </li>
             <li>
               <a class="dropdown-item" href="{{ route('auth.logout') }}">Logout</a>
@@ -40,10 +40,15 @@
         @endif
       </ul>
 
-      <form class="d-flex">
-        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-        <button class="btn btn-outline-primary" type="submit">Search</button>
+      <form action="{{ route('home') }}" method="get" class="d-flex">
+        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name="search">
+        <button class="btn btn-outline-primary" type="submit">
+          Search
+        </button>
       </form>
+
+      <a class="btn btn-outline-info ms-1" href="{{ route('home') }}">Reset</a>
+
     </div>
   </div>
 </nav>

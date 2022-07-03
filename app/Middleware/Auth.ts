@@ -53,7 +53,6 @@ export default class AuthMiddleware {
     /**
      * Unable to authenticate using any guard
      */
-
     session.flash({ error: 'Unauthenticated' })
     throw new AuthenticationException(
       'Unauthorized access',

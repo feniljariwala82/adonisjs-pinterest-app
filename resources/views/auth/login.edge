@@ -4,7 +4,7 @@
 @section('content')
 
 <div class="container mb-5 mt-5">
-  <form action="{{ route('auth.login') }}" method="POST">
+  <form action="{{ route('auth.login') }}" method="POST" id="loginForm">
     {{ csrfField() }}
     <div class="d-flex flex-column align-items-center">
       <div class="col align-items-start">
@@ -12,63 +12,79 @@
       </div>
       <div class="col-12 col-md-5">
         <div class="form-floating mb-3">
-          <input type="email" class="form-control" id="emailInput" name="email" placeholder="name@example.com"
-            value="{{ flashMessages.get('email', '') }}" required>
+          <input type="email" class="form-control {{ flashMessages.has('errors.email') && 'is-invalid' }}"
+            id="emailInput" name="email" placeholder="name@example.com" value="{{ flashMessages.get('email', '') }}"
+            required>
           <label for="floatingInput">Email address</label>
-          <p class="fs-6 text-danger mb-0" id="emailError" style="display:none;">
+          {{--  email error starts --}}
+          @if(flashMessages.has('errors.email'))
+          <p class="fs-6 text-danger mb-0" id="emailError">
             {{ flashMessages.get('errors.email') }}
           </p>
+          @endif
+          {{--  email error ends --}}
         </div>
       </div>
-      {{--  email error  --}}
-      @if(flashMessages.has('errors.email'))
-      <script type="module">
-        $('#emailInput').addClass('is-invalid')
-        $('#emailError').css({'display':'inline-block'})
-      </script>
-      @endif
 
       <div class="col-12 col-md-5">
         <div class="form-floating mb-3">
-          <input type="password" class="form-control" id="passwordInput" name="password" placeholder="Password"
-            required>
+          <input type="password" class="form-control {{ flashMessages.has('errors.password') && 'is-invalid' }}"
+            id="passwordInput" name="password" placeholder="Password" required>
           <label for="floatingPassword">Password</label>
-          <p class="fs-6 text-danger mb-0" id="passwordError" style="display:none;">
+          {{--  password error starts --}}
+          @if(flashMessages.has('errors.password'))
+          <p class="fs-6 text-danger mb-0" id="passwordError">
             {{ flashMessages.get('errors.password') }}
           </p>
+          @endif
+          {{--  password error ends --}}
         </div>
       </div>
-      {{--  password error  --}}
-      @if(flashMessages.has('errors.password'))
-      <script type="module">
-        $('#passwordInput').addClass('is-invalid')
-        $('#passwordError').css({'display':'inline-block'})
-      </script>
-      @endif
 
-      {{--  buttons  --}}
+      {{--  buttons starts --}}
       <div class="col-12 col-md-5">
-        <button class="btn btn-primary" type="submit">Login</button>
-        <a type="button" class="btn btn-secondary" href="{{ route('auth.signup') }}">Signup</a>
+        <button class="btn btn-primary" type="submit" id="loginBtn">
+          Login
+          <i class="fa-solid fa-right-to-bracket ms-1"></i>
+        </button>
+        <a type="button" class="btn btn-secondary" href="{{ route('auth.signup') }}">
+          Signup
+          <i class="fa-solid fa-user-plus ms-2"></i>
+        </a>
+
+        <script>
+          $(document).ready(() => {
+            const $form = $("#loginForm")
+            /**
+             * on form submitted, starting loader
+             */
+            $form.on('submit', () => {
+              // starting spinner
+              spinner.startLoading()
+            });
+          })
+
+        </script>
       </div>
+      {{--  buttons ends --}}
 
+      {{--  social auth div starts  --}}
       <div class="col-12 col-md-5 mt-5 text-center">
-
         <p class="text-muted">Or login with Google, Github or Facebook</p>
-
-        <a type="button" class="btn btn-primary" href="{{ route('auth.google.redirect') }}">
+        <a type="button" class="btn btn-primary m-1" href="{{ route('auth.google.redirect') }}">
           <i class="fab fa-google"></i>
           Google
         </a>
-        <a type="button" class="btn btn-primary" href="{{ route('auth.github.redirect') }}">
+        <a type="button" class="btn btn-primary m-1" href="{{ route('auth.github.redirect') }}">
           <i class="fab fa-github"></i>
           Github
         </a>
-        <a type="button" class="btn btn-primary" href="{{ route('auth.fb.redirect') }}">
+        <a type="button" class="btn btn-primary m-1" href="{{ route('auth.fb.redirect') }}">
           <i class="fab fa-facebook"></i>
           Facebook
         </a>
       </div>
+      {{--  social auth div ends  --}}
     </div>
   </form>
 </div>

@@ -1,0 +1,153 @@
+<div class="row justify-content-around align-items-center">
+  {{--  tags  --}}
+  <div class="col-12 col-sm-10">
+    <div class="form-floating">
+
+      {{--  tag array input container starts  --}}
+      <div id="tagContainer">
+      </div>
+      {{--  tag array input container ends  --}}
+
+      {{--  input to enter tag  --}}
+      <input type="text" class="form-control {{ flashMessages.has('errors.tags') && 'is-invalid' }}" id="tagInput">
+      <label for="floatingInput">Post tag</label>
+      @if(flashMessages.has('errors.tags'))
+      <p class="fs-6 text-danger mb-0">
+        {{ flashMessages.get('errors.tags') }}
+      </p>
+      @endif
+    </div>
+  </div>
+
+  {{--  Add button  --}}
+  <div class="col-12 col-sm-2 mt-2 mt-md-0">
+    <button type="button" class="btn btn-primary" id="addTab">Add</button>
+  </div>
+</div>
+
+{{--  tag view starts  --}}
+<div class="p-4 border rounded mt-4" id="tabContainer">
+
+</div>
+{{--  tag view starts  --}}
+
+<script>
+  $(document).ready(() => {
+
+    const $tagContainer = $("#tagContainer")
+
+    const appendTagInput = (id, value) => {
+      const tag = `<input type="hidden" id=tag_${id} name=tags[] value=${value}>`
+      $tagContainer.append(tag)
+    }
+
+    const removeTagInput = (id) => {
+      $tagContainer.children(`#tag_${id}`).remove()
+    }
+
+    // tag index used when creating a new tag
+    let index = 0
+    // array of tags
+    const tags = []
+    // if any tags passed
+    const postTags = JSON.parse('{{{ JSON.stringify(tags) }}}')
+    // tag container
+    const $container = $("#tabContainer")
+    const $addTagBtn = $("#addTab")
+    const $tags = $("#tags")
+    const $input = $('#tagInput')
+
+    /**
+     * displaying already created tags
+     */
+    if (postTags) {
+      for (const tag of postTags) {
+        const i = index
+        $container.append(
+          `<span class="badge rounded-pill bg-secondary text-capitalize mt-1 ms-1 p-2" id=${i} style="cursor:pointer;">
+      </span>`
+        )
+
+        // adding already existed tags to formTags array
+        tags.push(tag.title)
+        appendTagInput(i, tag.title)
+
+        // assigning value to the badge
+        $('#' + i).text(tag.title)
+
+        // close button
+        $('#' + i).on('click', function () {
+          // removing from the tabs array
+          const index = tags.indexOf($('#' + i).text())
+          if (index !== -1) {
+            tags.splice(index, 1)
+            removeTagInput(i)
+          }
+
+          // fading tag
+          $('#' + i).addClass('fade').remove()
+        })
+
+        // at the end increasing index by one
+        index += 1
+      }
+    }
+
+    /**
+     * event handler for adding tag
+     */
+    $addTagBtn.on('click', (e) => {
+      e.preventDefault()
+
+      const value = $input.val().trim()
+
+      // adding new tag into array
+      const regexResult = /^[a-zA-Z]+$/.test(value);
+      if (!regexResult) {
+        // appending error alert
+        alert('Tags can only contain alphabets with no white space only')
+        return
+      }
+
+      // increasing index on validation passed
+      const i = index
+
+      // checking if tag exists or not
+      const tagIndex = tags.findIndex(tag => tag === value)
+      if (tagIndex > -1) {
+        alert('Tags already exists')
+        return
+      }
+
+      tags.push(value)
+      appendTagInput(i, value)
+
+      $container.append(
+        `<span class="badge rounded-pill bg-secondary text-capitalize mt-1 ms-1 p-2" id=${i} style="cursor:pointer;"> </span>`
+      )
+
+      // assigning value to the badge
+      $('#' + i).text(value)
+
+      // remove button
+      $('#' + i).on('click', function () {
+        // removing from the tabs array
+        const index = tags.indexOf($('#' + i).text())
+        if (index !== -1) {
+          tags.splice(index, 1)
+          removeTagInput(i)
+        }
+
+        // fading tag
+        $('#' + i).addClass('fade').remove()
+      })
+
+      // resetting input text null
+      $input.val('')
+
+      // at the end increasing index by one
+      index += 1
+    })
+  })
+
+</script>

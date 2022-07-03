@@ -21,7 +21,8 @@
         {{--  original image preview  --}}
         <div class="col-6">
           <p class="text-center">Old Image</p>
-          <img src="{{ post.image_url }}" class="img-thumbnail" alt="Image" id="oldImage">
+          <img src="data:image/png;base64, {{ post.$extras.imageBaseString }}" class="img-thumbnail" alt="Image"
+            id="oldImage">
         </div>
 
         {{--  new image preview  --}}
@@ -37,77 +38,79 @@
 
       <h4 class="mb-4 fs-4 fw-bold text-center mt-3 mt-sm-0">Edit Post</h4>
 
-      <form action="{{ route('post.store') }}" method="POST" id="myForm">
+      <form action="{{ route('post.update', { id: post.id }, { qs: { _method:'PUT' } } ) }}" method="POST"
+        id="editPostForm" enctype='multipart/form-data'>
         {{ csrfField() }}
 
         <div class="d-flex flex-column justify-content-center align-items-center">
 
-
-          {{--  alert container  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6" id="alertContainer">
-          </div>
-
-          {{--  title  --}}
           <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+            {{--  title starts  --}}
             <div class="form-floating mb-3">
-              <input type="text" class="form-control" id="titleInput" name="title" placeholder="create song"
-                value="{{ post.title }}" required>
+              <input type="text" class="form-control {{ flashMessages.has('errors.title') && 'is-invalid' }}"
+                id="titleInput" name="title" placeholder="create song"
+                value="{{ flashMessages.get('title', post.title) }}" required>
               <label for="floatingInput">Post Title</label>
-            </div>
-          </div>
 
-          {{--  description  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+              @if(flashMessages.has('errors.title'))
+              <p class="fs-6 text-danger mb-0">
+                {{ flashMessages.get('errors.title') }}
+              </p>
+              @endif
+            </div>
+            {{--  title ends  --}}
+
+            {{--  description starts  --}}
             <div class="form-floating mb-3">
-              <textarea class="form-control" placeholder="Leave a description here" id="descriptionInput"
-                name="description" style="height: 100px" required></textarea>
+              <textarea class="form-control {{ flashMessages.has('errors.description') && 'is-invalid' }}"
+                placeholder="Leave a description here" id="descriptionInput" name="description"
+                value="{{ flashMessages.get('description', post.description) }}" style="height: 100px" required>
+              </textarea>
               <label for="floatingTextarea2">Post Description</label>
-            </div>
-            <script type="module">
-              $('#descriptionInput').text(JSON.parse('{{{ JSON.stringify(post.description) }}}'))
-            </script>
-          </div>
 
-          {{--  postImage dropdown  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
+              @if(flashMessages.has('errors.description'))
+              <p class="fs-6 text-danger mb-0">
+                {{ flashMessages.get('errors.description') }}
+              </p>
+              @endif
+            </div>
+            <script>
+              const $desc = document.getElementById('descriptionInput')
+              const value = "{{ post.description }}"
+              if (value !== 'undefined') {
+                $desc.innerHTML = value
+              }
+
+            </script>
+            {{--  description ends  --}}
+
+            {{--  postImage dropdown starts  --}}
             <div class="form-floating mb-3">
               <div class="input-group mb-3">
                 <label class="input-group-text" for="inputGroupFile01">Upload</label>
-                <input type="file" class="form-control" id="postImage" name="postImage"
-                  value="{{ flashMessages.get('postImage', '') }}">
+                <input type="file" class="form-control {{ flashMessages.has('errors.postImage') && 'is-invalid' }}"
+                  id="postImage" name="postImage">
+
+                @if(flashMessages.has('errors.postImage'))
+                <p class="fs-6 text-danger mb-0">
+                  {{ flashMessages.get('errors.postImage') }}
+                </p>
+                @endif
               </div>
             </div>
-          </div>
+            {{--  postImage dropdown ends  --}}
 
-          @set('tags', post.postTags.map((postTags) => postTags.tag))
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
-            <div class="row align-items-center">
-              {{--  tags  --}}
-              <div class="col-12 col-sm-10">
-                <div class="form-floating">
-                  {{--  input  --}}
-                  <input type="text" class="form-control" id="tagInput" placeholder="create tag">
-                  <label for="floatingInput">Post tag</label>
-                </div>
-              </div>
+            {{--  tag edit component starts  --}}
+            @!component('components/tag/input', {
+            tags: post.tags
+            })
+            {{--  tag edit component starts  --}}
 
-              {{--  Add button  --}}
-              <div class="col-12 col-sm-2 mt-2 mt-sm-0">
-                <button type="button" class="btn btn-primary" id="addTab">Add</button>
-              </div>
-            </div>
-          </div>
-
-          {{--  tag view  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6 mt-4">
-            <div class="p-4 border rounded" id="tabContainer">
-
-            </div>
-          </div>
-
-          {{--  buttons  --}}
-          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6 mt-4">
-            <button class="btn btn-primary" id="submit">Update Post</button>
+            {{--  buttons  --}}
+            <button class="btn btn-primary mt-2" id="submit">
+              Update
+              <i class="fa-solid fa-square-pen ms-1"></i>
+            </button>
           </div>
         </div>
       </form>
@@ -115,161 +118,31 @@
   </div>
 </div>
 
-<script type="module">
-  $(document).ready(function () {
-
-    let postTags = JSON.parse('{{{ JSON.stringify(tags) }}}')
-
-    let index = 0
-    let formTags = []
-
-    // displaying tags
-    for (const tag of postTags) {
-      let i = ++index
-      $('#tabContainer').append(
-        `<span class="badge rounded-pill bg-secondary text-capitalize mt-1 ms-1 p-2" id=${i} style="cursor:pointer;">
-      </span>`
-      )
-
-      // adding already existed tags to formTags array
-      formTags.push(tag.title)
-
-      // assigning value to the badge
-      $('#' + i).text(tag.title)
-
-      // close button
-      $('#' + i).on('click', function () {
-        // removing from the tabs array
-        var index = formTags.indexOf($('#' + i).text())
-        if (index !== -1) {
-          formTags.splice(index, 1)
-        }
-
-        // fading tag
-        $('#' + i).addClass('fade').remove()
-      })
-    }
-
-    const showErrorAlert = (message) => {
-      $('#alertContainer')
-        .append('<div class="alert alert-dismissible fade show text-capitalize" role="alert" id="alert"></div>')
-      $('#alert')
-        .append(`<strong>Error </strong>${message}`)
-        .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button> ')
-        .addClass('alert-danger')
-    }
-
-    $('#closeBtn').on('click', function () {
-      $('#btn').addClass('fade')
-    })
-
-    $('#addTab').on('click', function (e) {
-      e.preventDefault()
-
-      // adding new tag into array
-      let res = /^[a-zA-Z ]+$/.test($('#tagInput').val());
-      if (res) {
-        formTags.push($('#tagInput').val())
-      } else {
-        // appending error alert
-        showErrorAlert('Tags can contain alphabets with no space only')
-        return
-      }
-
-      let i = ++index
-      $('#tabContainer').append(
-        `<span class="badge rounded-pill bg-secondary text-capitalize mt-1 ms-1 p-2" id=${i} style="cursor:pointer;"> </span>`
-      )
-
-      // assigning value to the badge
-      $('#' + i).text($('#tagInput').val())
-
-      // close button
-      $('#' + i).on('click', function () {
-        // removing from the tabs array
-        var index = formTags.indexOf($('#' + i).text())
-        if (index !== -1) {
-          formTags.splice(index, 1)
-        }
-
-        // fading tag
-        $('#' + i).addClass('fade').remove()
-      })
-
-      // resetting input text null
-      $('#tagInput').val('')
-    })
-
+<script>
+  $(document).ready(() => {
     // let file
     $('input[type="file"]').change(function (e) {
       console.log('changed')
-      var fileName = e.target.files[0].name;
+      const fileName = e.target.files[0].name;
 
-      var reader = new FileReader();
-      reader.onload = function (e) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
         // get loaded data and render thumbnail.
         $("#imgContainer").css('display', 'block');
         $("#upImage").attr('src', e.target.result);
       };
       // read the image file as a data URL.
-      file = this.files[0]
       reader.readAsDataURL(this.files[0]);
     });
 
-    let formData;
-    formData = new FormData()
-    // default value of new image to false, making update image field optional
-    formData.append('newImage', false)
-
-    // on image change adding image to the file object, that we can use in form data
-    let file
-    $('#postImage').on('change', function (event) {
-      event.preventDefault()
-      file = this.files[0]
-    })
-
+    const $form = $("#editPostForm")
     /**
-     * submit form using ajax
+     * on form submitted, starting loader
      */
-    $('#submit').on('click', function (event) {
-      event.preventDefault()
-
-      formData.append('title', $('#titleInput').val())
-      formData.append('description', $('#descriptionInput').val())
-      if(file) {
-        formData.append('postImage', file)
-      }
-
-      for (var i = 0; i < formTags.length; i++) {
-        formData.append('tags[]', formTags[i]);
-      }
-
-      // sending the request
-      $.ajax({
-          url: "{{ route('post.update', {id: post.id }) }}",
-          method: 'PUT',
-          data: formData,
-          cache: false,
-          contentType: false,
-          processData: false,
-          timeout: 60000,
-          headers: {
-            'X-XSRF-TOKEN': helper.getCookie('XSRF-TOKEN'),
-          },
-        })
-        .done((success) => {
-          console.log('Success')
-          window.location.href = "{{ route('post.index') }}"
-        })
-        .fail((error) => {
-          console.log(error)
-          /**
-           * On error resetting form data for data duplication, 
-           */
-          formData = new FormData()
-          toast.error(error.responseText)
-        })
-    })
+    $form.on('submit', () => {
+      // starting spinner
+      spinner.startLoading()
+    });
   })
 
 </script>

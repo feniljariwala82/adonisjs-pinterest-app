@@ -1,34 +1,20 @@
+import Drive from '@ioc:Adonis/Core/Drive'
+import { TransactionClientContract } from '@ioc:Adonis/Lucid/Database'
 import {
+  afterFetch,
+  afterFind,
   BaseModel,
+  beforeSave,
   BelongsTo,
   belongsTo,
   column,
-  hasMany,
-  HasMany,
-  beforeSave,
+  manyToMany,
+  ManyToMany,
 } from '@ioc:Adonis/Lucid/Orm'
-import PostTag from 'App/Models/PostTag'
 import Tag from 'App/Models/Tag'
+import TagPost from 'App/Models/TagPost'
 import User from 'App/Models/User'
 import { DateTime } from 'luxon'
-
-type PostType = {
-  id: number
-  title: string
-  description: string
-  tags: string[]
-  imgName: string
-  imgUrl: string
-}
-
-type UpdateType = {
-  id: number
-  title: string
-  description: string
-  tags: string[]
-  imgName?: string
-  imgUrl?: string
-}
 
 export default class Post extends BaseModel {
   @column({ isPrimary: true })
@@ -44,7 +30,7 @@ export default class Post extends BaseModel {
   public user_id: number
 
   @column()
-  public image_name: string
+  public storage_prefix: string
 
   @column()
   public image_url: string
@@ -62,16 +48,43 @@ export default class Post extends BaseModel {
   })
   public user: BelongsTo<typeof User>
 
-  // post has many tags
-  @hasMany(() => PostTag, {
-    foreignKey: 'post_id', // defaults to userId
+  @manyToMany(() => Tag, {
+    // table name
+    pivotTable: 'tag_posts',
+    // foreign keys
+    localKey: 'id',
+    pivotForeignKey: 'post_id',
+    relatedKey: 'id',
+    pivotRelatedForeignKey: 'tag_id',
   })
-  public postTags: HasMany<typeof PostTag>
+  public tags: ManyToMany<typeof Tag>
 
   @beforeSave()
   public static async beforeSave(post: Post) {
-    post.title = post.title.toLowerCase().trim()
-    post.description = post.description.toLowerCase().trim()
+    post.title = post.title.toLowerCase()
+    post.description = post.description.toLowerCase()
+  }
+
+  @afterFind()
+  public static async afterFindHook(post: Post) {
+    try {
+      const imageBaseString = await Drive.get(post.storage_prefix)
+      post.$extras.imageBaseString = imageBaseString.toString('base64')
+    } catch (error) {
+      console.error(error.message)
+    }
+  }
+
+  @afterFetch()
+  public static async afterFetchHook(posts: Post[]) {
+    for (const post of posts) {
+      try {
+        const imageBaseString = await Drive.get(post.storage_prefix)
+        post.$extras.imageBaseString = imageBaseString.toString('base64')
+      } catch (error) {
+        console.error(error.message)
+      }
+    }
   }
 
   /**
@@ -80,12 +93,7 @@ export default class Post extends BaseModel {
    */
   public static async getAll() {
     try {
-      let posts = await this.query()
-        .preload('user')
-        .preload('postTags', (postTagQuery) => {
-          postTagQuery.preload('tag')
-        })
-        .orderBy('created_at', 'desc')
+      const posts = await this.query().preload('user').preload('tags').orderBy('created_at', 'desc')
       return Promise.resolve(posts)
     } catch (error) {
       console.error(error)
@@ -98,44 +106,14 @@ export default class Post extends BaseModel {
    * @param userId user id
    * @returns Promise
    */
-  public static async getAllByUser(userId: number) {
+  public static async getAllByUserIdWithQs(userId: number) {
     try {
-      let user = await User.query()
+      const user = await User.query()
         .where('id', userId)
         .preload('posts', (postQuery) => {
-          postQuery
-            .preload('postTags', (postTagQuery) => {
-              postTagQuery.preload('tag')
-            })
-            .orderBy('created_at', 'desc')
+          postQuery.orderBy('created_at', 'desc')
         })
         .first()
-      return Promise.resolve(user)
-    } catch (error) {
-      console.error(error)
-      return Promise.reject(error.message)
-    }
-  }
-
-  /**
-   * @description get user details by email
-   * @param email user email
-   * @returns Promise
-   */
-  public static async getAllByUserEmail(email: string) {
-    try {
-      let user = await User.query()
-        .where('email', email)
-        .preload('posts', (postQuery) => {
-          postQuery.preload('postTags', (postTagQuery) => {
-            postTagQuery.preload('tag')
-          })
-        })
-        .first()
-
-      if (!user) {
-        return Promise.reject('User not found with this email id')
-      }
 
       return Promise.resolve(user)
     } catch (error) {
@@ -146,42 +124,81 @@ export default class Post extends BaseModel {
 
   /**
    * @description the method to create new post
-   * @param task task to be created
    * @returns Promise
    */
-  public static async store(data: PostType) {
-    // creating post
-    let post: Post
+  public static async storePost(data: StorePostType, trx: TransactionClientContract) {
+    // creating post using transaction
+    let post = new Post()
     try {
-      post = await this.create({
-        title: data.title.toLocaleLowerCase(),
-        description: data.description.toLocaleLowerCase(),
-        user_id: data.id,
-        image_url: data.imgUrl,
-        image_name: data.imgName,
-      })
+      post.title = data.title
+      post.description = data.description
+      post.user_id = data.id
+      post.storage_prefix = data.storagePrefix
+
+      // using transaction
+      post.useTransaction(trx)
+
+      // saving record
+      post = await post.save()
     } catch (error) {
+      // if it fails to insert data into pivot table we rollback the transaction
+      await trx.rollback()
+
       console.error(error)
       return Promise.reject(error.message)
     }
 
-    // creating tags
-    let tagIds: Array<number>
+    // finding the tags that already exists
+    let existedTags: Tag[] = []
     try {
-      // Non-null assertion operator
-      tagIds = await Tag.store(data.tags)
+      existedTags = await Tag.getAllByTagTitle(data.tags)
     } catch (error) {
+      // if it fails to find tags
+      await trx.rollback()
+
       console.error(error)
       return Promise.reject(error)
     }
 
-    // create relationships
+    // data type to insert new tag into relationship
+    const newTags: { title: string }[] = []
+
+    // tag string array
+    const existedTagList = existedTags.map((tag) => tag.title)
+    data.tags.map((tag) => {
+      if (!existedTagList.includes(tag)) {
+        // if tag does not exist then adding it into new tags
+        newTags.push({ title: tag })
+      }
+    })
+
+    // inserting the tags that are new
     try {
-      await PostTag.store(post.id, tagIds)
+      await post.related('tags').createMany(newTags)
     } catch (error) {
+      // roll back on failure on creating tags using relationship method
+      await trx.rollback()
+
       console.error(error)
       return Promise.reject(error)
     }
+
+    // creating relationships with pre-existing tags
+    try {
+      await TagPost.storePostTag(
+        post.id,
+        existedTags.map((tag) => tag.id),
+        trx
+      )
+    } catch (error) {
+      await trx.rollback()
+
+      console.error(error)
+      return Promise.reject(error)
+    }
+
+    // at the end committing transaction
+    await trx.commit()
 
     return Promise.resolve('Post created')
   }
@@ -193,12 +210,12 @@ export default class Post extends BaseModel {
    */
   public static async getPostById(id: number) {
     try {
-      let post = await this.query()
+      const post = await this.query()
         .where('id', id)
-        .preload('user')
-        .preload('postTags', (postTagQuery) => {
-          postTagQuery.preload('tag')
+        .preload('user', (userQuery) => {
+          userQuery.preload('profile')
         })
+        .preload('tags')
         .first()
 
       if (!post) {
@@ -214,25 +231,24 @@ export default class Post extends BaseModel {
 
   /**
    * @description method to update task by id
-   * @param id task id
    * @param data data to be updated
    * @returns Promise
    */
-  public static async update(data: UpdateType) {
+  public static async updatePost(data: UpdatePostType, trx: TransactionClientContract) {
     // preloading post data
     let post: Post | null
     try {
-      post = await this.query()
-        .where('id', data.id)
-        .preload('postTags', (postTagQuery) => {
-          postTagQuery.preload('tag')
-        })
-        .first()
-
+      post = await this.query({ client: trx }).where('id', data.id).preload('tags').first()
       if (!post) {
+        // roll back
+        await trx.rollback()
+
         return Promise.reject('Post not found')
       }
     } catch (error) {
+      // roll back
+      await trx.rollback()
+
       console.error(error)
       return Promise.reject(error.message)
     }
@@ -241,51 +257,110 @@ export default class Post extends BaseModel {
     post.title = data.title
     post.description = data.description
 
-    // if image name exists then saving new image name
-    if (data.imgName) {
-      post.image_name = data.imgName
+    // if image prefix exists then saving new image storage prefix
+    if (data.storagePrefix) {
+      post.storage_prefix = data.storagePrefix
     }
 
-    // if image name exists then saving new image name
-    if (data.imgUrl) {
-      post.image_url = data.imgUrl
-    }
-
-    try {
-      await post.save()
-    } catch (error) {
-      console.error(error)
-      return Promise.reject(error.message)
-    }
-
-    // deleting old tags
-    try {
-      for (const postTag of post.postTags) {
-        await postTag.delete()
+    // tags removed
+    const removedTagIds: number[] = []
+    post.tags.map((tag) => {
+      if (!data.tags.includes(tag.title)) {
+        removedTagIds.push(tag.id)
       }
+    })
+
+    // removing removed tags
+    try {
+      await post.related('tags').detach(removedTagIds)
+    } catch (error) {
+      // roll back
+      await trx.rollback()
+
+      console.error(error)
+      return Promise.reject(error.message)
+    }
+
+    // saving updated state
+    try {
+      post = await post.save()
     } catch (error) {
       console.error(error)
       return Promise.reject(error.message)
     }
 
-    // creating new tags
-    let tagIds: Array<number>
+    // finding the tags that already exists
+    let existedTags: Tag[] = []
     try {
-      // Non-null assertion operator
-      tagIds = await Tag.store(data.tags)
+      existedTags = await Tag.getAllByTagTitle(data.tags)
     } catch (error) {
+      // rollback whole update transaction on failure
+      await trx.rollback()
+
       console.error(error)
       return Promise.reject(error)
     }
 
-    // create relationships
+    // data type to insert new tag into relationship
+    const newTags: { title: string }[] = []
+
+    // existing tag list
+    const existedTagList = existedTags.map((tag) => tag.title)
+
+    // generating new tag list
+    data.tags.map((tag) => {
+      if (!existedTagList.includes(tag)) {
+        // if tag does not exist then adding it into new tags
+        newTags.push({ title: tag })
+      }
+    })
+
+    // inserting the tags that are new
     try {
-      await PostTag.store(post.id, tagIds)
+      // creating new tags using related method
+      await post.related('tags').createMany(newTags)
     } catch (error) {
+      // rollback whole update transaction on failure
+      await trx.rollback()
+
       console.error(error)
       return Promise.reject(error)
     }
+
+    // creating relationships with pre-existing tags
+    try {
+      await TagPost.storePostTag(
+        post.id,
+        existedTags.map((tag) => tag.id),
+        trx
+      )
+    } catch (error) {
+      // rollback whole update transaction on failure
+      await trx.rollback()
+
+      // throwing error
+      console.error(error)
+      return Promise.reject(error)
+    }
+
+    // at the end committing the transaction
+    await trx.commit()
 
     return Promise.resolve('Post updated')
+  }
+
+  /**
+   * @description finds distinct posts
+   * @param ids id field of post
+   * @returns Promise
+   */
+  public static findAll = async (ids: number[]) => {
+    try {
+      const posts = await this.query().whereIn('id', ids)
+      return Promise.resolve(posts)
+    } catch (error) {
+      console.error(error)
+      return Promise.reject(error.message)
+    }
   }
 }

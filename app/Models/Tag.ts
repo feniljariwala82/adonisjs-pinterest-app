@@ -1,6 +1,5 @@
+import { BaseModel, column } from '@ioc:Adonis/Lucid/Orm'
 import { DateTime } from 'luxon'
-import { BaseModel, column, hasMany, HasMany } from '@ioc:Adonis/Lucid/Orm'
-import PostTag from 'App/Models/PostTag'
 
 export default class Tag extends BaseModel {
   @column({ isPrimary: true })
@@ -15,12 +14,6 @@ export default class Tag extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
 
-  // post has many tags
-  @hasMany(() => PostTag, {
-    foreignKey: 'tag_id',
-  })
-  public postTags: HasMany<typeof PostTag>
-
   /**
    * @description method to find posts according to tags
    * @param tags tags
@@ -28,7 +21,7 @@ export default class Tag extends BaseModel {
    */
   public static async getPostsForTag(tags: string) {
     try {
-      let posts = await this.query()
+      const posts = await this.query()
         .distinct()
         .select('posts.*')
         .from('posts')
@@ -47,13 +40,13 @@ export default class Tag extends BaseModel {
    * @param tags tags to be added
    * @returns Promise
    */
-  public static async store(tags: Array<string>) {
-    let tagIds: Array<number> = []
-    for (const tag of tags) {
-      // checking tag exists or not
+  public static async storeTag(tags: Array<string>) {
+    const tagIds: number[] = []
+    for (const tagTitle of tags) {
+      // checking tagTitle exists or not
       let exists: Tag | null
       try {
-        exists = await this.findBy('title', tag)
+        exists = await this.findBy('title', tagTitle)
       } catch (error) {
         console.error(error)
         return Promise.reject(error.message)
@@ -61,13 +54,13 @@ export default class Tag extends BaseModel {
 
       // if exists ignore, if does not exists then add new one
       if (exists) {
-        // if tag exists then adding id to the id array, for mapping post to this tag
+        // if tagTitle exists then adding id to the id array, for mapping post to this tagTitle
         tagIds.push(exists.id)
       } else {
-        // create new tag and adding id for mapping the post to this tag
+        // create new tagTitle and adding id for mapping the post to this tagTitle
         try {
-          let createdTag = await this.create({
-            title: tag.toLocaleLowerCase(),
+          const createdTag = await this.create({
+            title: tagTitle,
           })
           tagIds.push(createdTag.id)
         } catch (error) {
@@ -78,5 +71,15 @@ export default class Tag extends BaseModel {
     }
 
     return Promise.resolve(tagIds)
+  }
+
+  public static getAllByTagTitle = async (tags: string[]) => {
+    try {
+      const fetchedTags = await this.query().whereIn('title', tags)
+      return Promise.resolve(fetchedTags)
+    } catch (error) {
+      console.error(error)
+      return Promise.reject(error.message)
+    }
   }
 }

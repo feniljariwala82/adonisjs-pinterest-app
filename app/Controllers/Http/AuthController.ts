@@ -5,6 +5,7 @@ import User from 'App/Models/User'
 import constants from 'Config/constants'
 
 const { GITHUB, GOOGLE, FACEBOOK } = constants.allyType
+const { passwordRegex } = constants.regex
 
 export default class AuthController {
   /**
@@ -13,16 +14,17 @@ export default class AuthController {
   public async login({ request, response, session, auth, view }: HttpContextContract) {
     switch (request.method()) {
       case 'POST':
-        let postSchema = schema.create({
+        const postSchema = schema.create({
           email: schema.string({ trim: true }, [rules.required(), rules.email()]),
           password: schema.string({ trim: true }, [rules.required(), rules.minLength(8)]),
         })
 
         // validating data
-        let payload = await request.validate({
+        const payload = await request.validate({
           schema: postSchema,
           messages: {
             'required': 'The {{ field }} is required',
+            'email.email': 'Email should be a valid email id',
             'password.minLength': 'Password must be 8 characters long',
           },
         })
@@ -30,7 +32,7 @@ export default class AuthController {
         // fetching user
         let user: User
         try {
-          user = await User.findByOrFail('email', payload.email.toLocaleLowerCase().trim())
+          user = await User.findByOrFail('email', payload.email.toLocaleLowerCase())
         } catch (error) {
           console.error(error)
           session.flash({ error: 'User not found' })
@@ -49,31 +51,36 @@ export default class AuthController {
           session.flash({ success: 'Logged in' })
           return response.redirect().toRoute('home')
         } catch (error) {
-          console.error(error.message)
+          console.error(error)
           session.flash({ error: error.message })
           return response.redirect().back()
         }
 
       default:
-        return view.render('auth/login')
+        const html = await view.render('auth/login')
+        return html
     }
   }
 
   /**
    * Sign up method
    */
-  public async signup({ request, response, session, view }: HttpContextContract) {
+  public async signup({ request, response, session, view, auth }: HttpContextContract) {
     switch (request.method()) {
       case 'POST':
-        let postSchema = schema.create({
+        const postSchema = schema.create({
           firstName: schema.string({ trim: true }, [rules.required(), rules.alpha()]),
           lastName: schema.string({ trim: true }, [rules.required(), rules.alpha()]),
           email: schema.string({ trim: true }, [rules.required(), rules.email()]),
-          password: schema.string({ trim: true }, [rules.required(), rules.minLength(8)]),
+          password: schema.string({ trim: true }, [
+            rules.required(),
+            rules.minLength(8),
+            rules.regex(passwordRegex),
+          ]),
         })
 
         // validating data
-        let payload = await request.validate({
+        const payload = await request.validate({
           schema: postSchema,
           messages: {
             'required': 'The {{ field }} is required',
@@ -81,21 +88,33 @@ export default class AuthController {
             'lastName.alpha': 'The last name must contain alphabets only',
             'email.email': 'Please provide valid email',
             'password.minLength': 'Password must be 8 characters long',
+            'password.regex':
+              'Password must be 8 characters long, with one uppercase, lowercase, number and special character',
           },
         })
 
         // creating new user
         try {
-          let result = await User.createUser(payload)
-          session.flash({ success: result })
-          return response.redirect().toRoute('home')
+          const createdUser = await User.createUser(payload)
+
+          // login attempt
+          try {
+            await auth.use('web').login(createdUser)
+            session.flash({ success: 'Account created, and you are logged in' })
+            return response.redirect().toRoute('home')
+          } catch (error) {
+            console.error(error)
+            session.flash({ error: error.message })
+            return response.redirect().back()
+          }
         } catch (error) {
           session.flash({ error })
           return response.redirect().back()
         }
 
       default:
-        return view.render('auth/signup')
+        const html = await view.render('auth/signup')
+        return html
     }
   }
 
@@ -156,27 +175,32 @@ export default class AuthController {
     try {
       const authUser = await google.user()
 
-      /**
-       * Making the user logged in
-       */
-      const user = await User.firstOrCreate(
-        { email: authUser.email! },
-        {
-          first_name: authUser.original.given_name,
-          last_name: authUser.original.family_name,
-          email: authUser.email!,
-          avatar_url: authUser.avatarUrl!,
-          social_auth: GOOGLE,
-        }
-      )
+      // creating or validating user
+      let user: User
+      try {
+        user = await User.createSocialAuthUser(authUser.email!, {
+          firstName: authUser.original.given_name,
+          lastName: authUser.original.family_name,
+          avatarUrl: authUser.avatarUrl ? authUser.avatarUrl : undefined,
+          socialAuth: GOOGLE,
+        })
+      } catch (error) {
+        console.error(error)
+        session.flash({ error })
+        return response.redirect().toRoute('auth.login')
+      }
 
       /**
        * Login user using the web guard
        */
-      await auth.use('web').login(user)
-
-      session.flash({ success: 'Logged In' })
-      return response.redirect().toRoute('post.index')
+      try {
+        await auth.use('web').login(user)
+        session.flash({ success: 'Logged In' })
+        return response.redirect().toRoute('post.index')
+      } catch (error) {
+        session.flash({ error: error.message })
+        return response.redirect().toRoute('auth.login')
+      }
     } catch (error) {
       session.flash({ error: error.message })
       return response.redirect().toRoute('auth.login')
@@ -231,25 +255,24 @@ export default class AuthController {
     try {
       const authUser = await github.user()
 
-      /**
-       * Making the user logged in
-       */
-      const user = await User.firstOrCreate(
-        { email: authUser.email! },
-        {
-          first_name: authUser.name.split(' ')[0],
-          last_name: authUser.name.split(' ')[1],
-          email: authUser.email!,
-          avatar_url: authUser.avatarUrl!,
-          social_auth: GITHUB,
-        }
-      )
+      // creating or validating user
+      let user: User
+      try {
+        user = await User.createSocialAuthUser(authUser.email!, {
+          firstName: authUser.name.split(' ')[0],
+          lastName: authUser.name.split(' ')[1],
+          avatarUrl: authUser.avatarUrl ? authUser.avatarUrl : undefined,
+          socialAuth: GITHUB,
+        })
+      } catch (error) {
+        session.flash({ error })
+        return response.redirect().toRoute('auth.login')
+      }
 
       /**
        * Login user using the web guard
        */
       await auth.use('web').login(user)
-
       session.flash({ success: 'Logged In' })
       return response.redirect().toRoute('post.index')
     } catch (error) {
@@ -302,21 +325,19 @@ export default class AuthController {
     try {
       const authUser = await faceBook.user()
 
-      console.log(authUser)
-
-      /**
-       * Making the user logged in
-       */
-      const user = await User.firstOrCreate(
-        { email: authUser.email! },
-        {
-          first_name: authUser.name.split(' ')[0],
-          last_name: authUser.name.split(' ')[1],
-          email: authUser.email!,
-          avatar_url: authUser.avatarUrl!,
-          social_auth: FACEBOOK,
-        }
-      )
+      // creating or validating user
+      let user: User
+      try {
+        user = await User.createSocialAuthUser(authUser.email!, {
+          firstName: authUser.name.split(' ')[0],
+          lastName: authUser.name.split(' ')[1],
+          avatarUrl: authUser.avatarUrl ? authUser.avatarUrl : undefined,
+          socialAuth: FACEBOOK,
+        })
+      } catch (error) {
+        session.flash({ error })
+        return response.redirect().toRoute('auth.login')
+      }
 
       /**
        * Login user using the web guard

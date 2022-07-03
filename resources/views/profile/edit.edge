@@ -10,7 +10,7 @@
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
       <li class="breadcrumb-item" aria-current="page"><a
-          href="{{ route('profile.index', {email: auth.user.email}) }}">Profile</a></li>
+          href="{{ route('profile.show', { id: profile.id } ) }}">Profile</a></li>
       <li class="breadcrumb-item active" aria-current="page">Edit</li>
     </ol>
   </nav>
@@ -27,11 +27,20 @@
         {{--  original image preview  --}}
         <div class="col-6">
           <p class="text-center fs-4">Previous Image</p>
-          @if(user.avatar_url)
-          <img src="{{ user.imageUrl }}" class="img-thumbnail" alt="Image" id="avatarUrl">
+
+          {{--  image rendering starts  --}}
+          @if(profile.storagePrefix)
+          <img class="img-thumbnail" src="data:image/png;base64, {{ profile.$extras.imageBaseString }}"
+            alt="image_{{profile.firstName}}" style="height:300px;">
+          {{--  if social auth  --}}
+          @elseif(profile.socialAuth === 'github' || profile.socialAuth === 'google' || profile.socialAuth ===
+          'facebook')
+          <img src="{{ profile.avatarUrl }}" class="img-thumbnail" alt="image_{{profile.firstName}}">
+          {{--  if no image  --}}
           @else
-          <p class="fs-5 text-capitalize text-center" id="imgMessage">Image not available!</p>
+          <p class="fs-5 text-capitalize text-center text-danger">Image not available!</p>
           @endif
+          {{--  image rendering ends  --}}
         </div>
 
         {{--  new image preview  --}}
@@ -46,147 +55,113 @@
     <div class="col-12 col-md-6 mt-4 mt-sm-0">
 
       <div class="d-flex flex-column justify-content-center align-items-center">
-        <div class="col align-items-start">
+        <div class="col">
           <h4 class="mb-4 fs-4 fw-bold">Edit Profile</h4>
         </div>
 
-        {{--  alert container  --}}
-        <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6" id="alertContainer">
-          {{--  alert will be appended here  --}}
-        </div>
-
-        {{--  first name  --}}
         <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
-          <div class="form-floating mb-3">
-            <input type="text" class="form-control" id="firstName" name="firstName" placeholder="enter first name"
-              value="{{ user.first_name }}" required>
-            <label for="floatingInput">First Name</label>
-          </div>
-        </div>
 
-        {{--  last name  --}}
-        <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
-          <div class="form-floating mb-3">
-            <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Dou"
-              value="{{ user.last_name }}" required>
-            <label for="floatingInput">Last Name</label>
-          </div>
-        </div>
+          <form action="{{ route('profile.update', { id: profile.id }, { qs: { _method:'PUT' }}) }}" method="post"
+            enctype='multipart/form-data' id="profileUpdateForm">
 
-        {{--  profile image  --}}
-        <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
-          <div class="form-floating mb-3">
-            <div class="input-group mb-3">
-              <label class="input-group-text" for="inputGroupFile01">Profile Image</label>
-              <input type="file" class="form-control" id="postImage" name="postImage">
+            {{ csrfField() }}
+
+            {{--  first name starts  --}}
+            <div class="form-floating mb-3">
+              <input type="text" class="form-control {{ flashMessages.has('errors.firstName') && 'is-invalid' }}"
+                id="firstName" name="firstName" placeholder="enter first name"
+                value="{{ flashMessages.get('firstName', profile.firstName) }}">
+              <label for="floatingInput">First Name</label>
+              @if(flashMessages.has('errors.firstName'))
+              <p class="fs-6 text-danger mb-0">
+                {{ flashMessages.get('errors.firstName') }}
+              </p>
+              @endif
             </div>
-          </div>
-        </div>
+            {{--  first name ends  --}}
 
-        {{--  email  --}}
-        @if(!user.social_auth)
-        <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
-          <div class="form-floating mb-3">
-            <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com"
-              value="{{ user.email }}" required>
-            <label for="floatingInput">Email address</label>
-          </div>
-        </div>
-        @endif
+            {{--  last name starts  --}}
+            <div class="form-floating mb-3">
+              <input type="text" class="form-control {{ flashMessages.has('errors.lastName') && 'is-invalid' }}"
+                id="lastName" name="lastName" placeholder="enter last name"
+                value="{{ flashMessages.get('lastName', profile.lastName) }}">
+              <label for="floatingInput">Last Name</label>
+              @if(flashMessages.has('errors.lastName'))
+              <p class="fs-6 text-danger mb-0">
+                {{ flashMessages.get('errors.lastName') }}
+              </p>
+              @endif
+            </div>
+            {{--  last name ends  --}}
 
-        {{--  password  --}}
-        @if(!user.social_auth)
-        <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
-          <div class="form-floating mb-3">
-            <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
-            <label for="floatingPassword">Password</label>
-          </div>
-        </div>
-        @endif
+            {{--  profile image starts  --}}
+            <div class="form-floating mb-3">
+              <div class="input-group">
+                <label class="input-group-text" for="inputGroupFile01">Profile Image</label>
+                <input type="file" class="form-control" id="postImage" name="postImage">
+              </div>
+              @if(flashMessages.get('errors.postImage'))
+              <p class="fs-6 text-danger mb-0">
+                {{ flashMessages.get('errors.postImage') }}
+              </p>
+              @endif
+            </div>
+            {{--  profile image ends  --}}
 
-        {{--  buttons  --}}
-        <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6 mt-2">
-          <button class="btn btn-primary" id="submit">Update Profile</button>
+            {{--  password starts  --}}
+            <div class="form-floating mb-3">
+              <input type="password" class="form-control {{ flashMessages.has('errors.password') && 'is-invalid' }}"
+                id="password" name="password" placeholder="enter password">
+              <label for="floatingInput">Password</label>
+              @if(flashMessages.has('errors.password'))
+              <p class="fs-6 text-danger mb-0">
+                {{ flashMessages.get('errors.password') }}
+              </p>
+              @endif
+            </div>
+            {{--  password ends  --}}
+
+            {{--  buttons  --}}
+            <button class="btn btn-primary" type="submit">Update Profile</button>
+          </form>
         </div>
       </div>
-
     </div>
   </div>
 </div>
 
-<script type="module">
-  $(document).ready(function () {
-    // let file
-    $('input[type="file"]').change(function (e) {
-      var fileName = e.target.files[0].name;
+<script>
+  $(document).ready(() => {
 
-      var reader = new FileReader();
-      reader.onload = function (e) {
+    $('input[type="file"]').change((e) => {
+      const fileName = e.target.files[0].name;
+      const reader = new FileReader();
+      reader.onload = (e) => {
         // get loaded data and render thumbnail.
         $("#upImage")
           .css('display', 'block')
           .attr('src', e.target.result)
-        $('#imgMessage').css('display', 'none')
       };
       // read the image file as a data URL.
-      file = this.files[0]
-      reader.readAsDataURL(this.files[0]);
+      const file = e.target.files[0]
+      reader.readAsDataURL(file);
     });
 
-    let formData;
-    formData = new FormData()
-
     // on image change adding image to the file object, that we can use in form data
-    let file
-    $('#postImage').on('change', function (event) {
+    $('#postImage').on('change', (event) => {
       event.preventDefault()
-      file = this.files[0]
       $('#imgContainer').css('display', 'inline-block')
-      formData.append('avatarUrl', file)
-      console.log(formData.get('avatarUrl'))
     })
 
+
+    const $form = $("#profileUpdateForm")
     /**
-     * submit form using ajax
+     * on form submitted, starting loader
      */
-    $('#submit').on('click', function (event) {
-      event.preventDefault()
-
-      formData.append('firstName', $('#firstName').val())
-      formData.append('lastName', $('#lastName').val())
-      if ({{!user.social_auth}}) {
-        formData.append('email', $('#email').val())
-        formData.append('password', $('#password').val())
-      }
-
-      $.ajax({
-          url: "{{ route('profile.update', {id: auth.user.id }, { qs: { _method:'PUT' }}) }}",
-          method: 'POST',
-          data: formData,
-          cache: false,
-          contentType: false,
-          processData: false,
-          timeout: 60000,
-          headers: {
-            'X-XSRF-TOKEN': helper.getCookie('XSRF-TOKEN'),
-          },
-        }).done((success) => {
-          console.log('Success')
-          window.location.href = "{{ route('auth.logout') }}"
-        })
-        .fail((error) => {
-          /**
-           * On error resetting form data for stopping data duplication,
-           */
-          formData = new FormData()
-             $("#upImage")
-             .css('display', 'block')
-             .attr('src','')
-        $('#imgContainer').css('display', 'none')
-
-          toast.error(error.responseText)
-        })
-    })
+    $form.on('submit', () => {
+      // starting spinner
+      spinner.startLoading()
+    });
   })
 
 </script>

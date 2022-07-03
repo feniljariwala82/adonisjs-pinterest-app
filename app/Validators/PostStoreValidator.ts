@@ -1,10 +1,8 @@
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { rules, schema, validator } from '@ioc:Adonis/Core/Validator'
+import { rules, schema } from '@ioc:Adonis/Core/Validator'
 
 export default class CreatePostValidator {
   constructor(protected ctx: HttpContextContract) {}
-
-  public reporter = validator.reporters.api
 
   public schema = schema.create({
     title: schema.string({ trim: true }, [rules.required(), rules.maxLength(50)]),
@@ -23,6 +21,7 @@ export default class CreatePostValidator {
     'postImage.required': 'The Image is required',
     'postImage.size': 'Image size should not be greater than 2mb',
     'postImage.extnames': 'Image should be jpg or png only',
+    'tags.required': 'Please add at least one tag',
     'tags.minLength': 'At least one tag should be entered',
     'tags.alpha': 'Tags can contain alphabets only',
   }

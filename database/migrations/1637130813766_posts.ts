@@ -5,12 +5,13 @@ export default class Posts extends BaseSchema {
 
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.increments('id')
+      table.increments('id').primary()
       table.string('title', 50).notNullable()
       table.string('description', 400).notNullable()
       table.integer('user_id').unsigned().references('users.id').onDelete('CASCADE').notNullable()
-      table.string('image_name', 100).notNullable()
-      table.string('image_url').notNullable()
+      table.string('storage_prefix').notNullable()
+      // TODO remove this field
+      table.string('image_url').nullable()
       table.timestamp('created_at', { useTz: true })
       table.timestamp('updated_at', { useTz: true })
     })
