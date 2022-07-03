@@ -103,9 +103,6 @@ export default class User extends BaseModel {
 
       // saving record
       createdUser = await createdUser.save()
-
-      // committing transaction
-      await trx.commit()
     } catch (error) {
       // rollback whole transaction
       await trx.rollback()
@@ -116,13 +113,14 @@ export default class User extends BaseModel {
 
     // creating profile
     try {
-      await Profile.updateOrCreateProfile({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        userId: createdUser.id,
-      })
-
-      return Promise.resolve(createdUser)
+      await Profile.updateOrCreateProfile(
+        {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          userId: createdUser.id,
+        },
+        trx
+      )
     } catch (error) {
       // rollback whole transaction
       await trx.rollback()
@@ -130,6 +128,11 @@ export default class User extends BaseModel {
       console.error(error)
       return Promise.reject(error)
     }
+
+    // committing transaction
+    await trx.commit()
+
+    return Promise.resolve(createdUser)
   }
 
   /**
@@ -139,6 +142,9 @@ export default class User extends BaseModel {
    * @returns Promise
    */
   public static createSocialAuthUser = async (email: string, profile: StoreProfileType) => {
+    // Transaction created
+    const trx = await Database.transaction()
+
     /**
      * 1. fetching whether user exists or not
      * 2. checking if user exists with different auth or not
@@ -164,26 +170,38 @@ export default class User extends BaseModel {
     } else {
       // if does not exists then creating new one
       try {
-        user = await this.create({ email })
+        user = (await this.create({ email })).useTransaction(trx)
       } catch (error) {
+        // roll back
+        await trx.rollback()
+
         console.error(error)
         return Promise.reject(error.message)
       }
 
       // creating profile
       try {
-        await Profile.updateOrCreateProfile({
-          firstName: profile.firstName,
-          lastName: profile.lastName,
-          avatarUrl: profile.avatarUrl && profile.avatarUrl,
-          socialAuth: profile.socialAuth,
-          userId: user.id,
-        })
+        await Profile.updateOrCreateProfile(
+          {
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            avatarUrl: profile.avatarUrl && profile.avatarUrl,
+            socialAuth: profile.socialAuth,
+            userId: user.id,
+          },
+          trx
+        )
       } catch (error) {
+        // roll back
+        await trx.rollback()
+
         console.error(error)
         return Promise.reject(error.message)
       }
     }
+
+    // committing transaction
+    await trx.commit()
 
     return Promise.resolve(user)
   }

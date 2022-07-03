@@ -10,6 +10,7 @@ import {
 } from '@ioc:Adonis/Lucid/Orm'
 import User from 'App/Models/User'
 import { DateTime } from 'luxon'
+import { TransactionClientContract } from '@ioc:Adonis/Lucid/Database'
 
 export default class Profile extends BaseModel {
   @column({ isPrimary: true })
@@ -76,7 +77,10 @@ export default class Profile extends BaseModel {
    * @param data profile data
    * @returns Promise
    */
-  public static updateOrCreateProfile = async (data: StoreProfileType) => {
+  public static updateOrCreateProfile = async (
+    data: StoreProfileType,
+    trx: TransactionClientContract
+  ) => {
     let queryString = {}
     // @ts-ignore
     if (typeof parseInt(data.userId) === 'number') {
@@ -86,16 +90,23 @@ export default class Profile extends BaseModel {
     }
 
     try {
-      await this.updateOrCreate(queryString, {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        userId: data.userId,
-        avatarUrl: data.avatarUrl && data.avatarUrl,
-        socialAuth: data.socialAuth && data.socialAuth,
-        storagePrefix: data.storagePrefix && data.storagePrefix,
-      })
+      await this.updateOrCreate(
+        queryString,
+        {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          userId: data.userId,
+          avatarUrl: data.avatarUrl && data.avatarUrl,
+          socialAuth: data.socialAuth && data.socialAuth,
+          storagePrefix: data.storagePrefix && data.storagePrefix,
+        },
+        { client: trx }
+      )
       return Promise.resolve('Profile saved')
     } catch (error) {
+      // roll back on error
+      await trx.rollback()
+
       console.error(error)
       return Promise.reject(error.message)
     }
