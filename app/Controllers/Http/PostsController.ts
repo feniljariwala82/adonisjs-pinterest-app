@@ -310,7 +310,7 @@ export default class PostsController {
     }
   }
 
-  public download = async ({ params, response, session }: HttpContextContract) => {
+  public async download({ params, response, session }: HttpContextContract) {
     const { id } = params
 
     try {
