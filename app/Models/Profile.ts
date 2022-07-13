@@ -86,7 +86,7 @@ export default class Profile extends BaseModel {
     if (typeof parseInt(data.userId) === 'number') {
       queryString = { userId: data.userId }
     } else {
-      queryString = { userId: null }
+      queryString = {}
     }
 
     try {

@@ -54,7 +54,7 @@ export default class User extends BaseModel {
   public posts: HasMany<typeof Post>
 
   // user has one profile
-  @hasOne(() => Profile, { foreignKey: 'userId', localKey: 'id' })
+  @hasOne(() => Profile, { localKey: 'id', foreignKey: 'userId' })
   public profile: HasOne<typeof Profile>
 
   /**
