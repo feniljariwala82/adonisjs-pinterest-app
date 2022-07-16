@@ -23,7 +23,8 @@
     {{--  if social auth  --}}
     @elseif(profile.socialAuth === 'github' || profile.socialAuth === 'google' || profile.socialAuth ===
     'facebook')
-    <img src="{{ profile.avatarUrl }}" class="img-thumbnail" alt="image_{{profile.firstName}}">
+    <img src="{{ profile.avatarUrl }}" class="img-thumbnail" alt="image_{{profile.firstName}}"
+      referrerpolicy="no-referrer">
     {{--  if no image  --}}
     @else
     <p class="fs-5 text-capitalize text-center text-danger">Image not available!</p>
