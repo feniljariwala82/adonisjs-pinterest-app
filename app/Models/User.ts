@@ -34,12 +34,12 @@ export default class User extends BaseModel {
   public updatedAt: DateTime
 
   // hashing password
-  // @beforeSave()
-  // public static async hashPassword(user: User) {
-  //   if (user.$dirty.password) {
-  //     user.password = await Hash.make(user.password.trim())
-  //   }
-  // }
+  @beforeSave()
+  public static async hashPassword(user: User) {
+    if (user.$dirty.password) {
+      user.password = await Hash.make(user.password.trim())
+    }
+  }
 
   // before saving lower casing all column values
   @beforeSave()
@@ -90,6 +90,7 @@ export default class User extends BaseModel {
     // creating user
     let createdUser: User
     try {
+<<<<<<< HEAD
       createdUser = await this.create(
         {
           email: user.email,
@@ -97,6 +98,16 @@ export default class User extends BaseModel {
         },
         { client: trx }
       )
+=======
+      createdUser.email = user.email
+      createdUser.password = user.password
+
+      // using transaction
+      createdUser.useTransaction(trx)
+
+      // saving record
+      createdUser = await createdUser.save()
+>>>>>>> a6f5860ec3ab876c8d0a2c9706053896a4d96a6b
     } catch (error) {
       console.error(error)
       // rollback whole transaction
@@ -211,7 +222,7 @@ export default class User extends BaseModel {
 
     // for password
     if (password) {
-      user.password = await Hash.make(password.trim())
+      user.password = password
     }
 
     // saving user data
