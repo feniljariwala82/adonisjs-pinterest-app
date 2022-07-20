@@ -41,10 +41,21 @@
       </ul>
 
       <form action="{{ route('home') }}" method="get" class="d-flex">
-        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name="search">
+        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name="search"
+          id="searchInput">
         <button class="btn btn-outline-primary" type="submit">
           Search
         </button>
+        <script>
+          $(document).ready(() => {
+            const params = new URLSearchParams(window.location.search)
+            const value = params.get('search')
+            if (value) {
+              $('#searchInput').val(value)
+            }
+          })
+
+        </script>
       </form>
 
       <a class="btn btn-outline-info ms-1" href="{{ route('home') }}">Reset</a>

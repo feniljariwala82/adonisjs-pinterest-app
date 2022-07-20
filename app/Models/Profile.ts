@@ -89,27 +89,20 @@ export default class Profile extends BaseModel {
       queryString = {}
     }
 
-    try {
-      await this.updateOrCreate(
-        queryString,
-        {
-          firstName: data.firstName,
-          lastName: data.lastName,
-          userId: data.userId,
-          avatarUrl: data.avatarUrl && data.avatarUrl,
-          socialAuth: data.socialAuth && data.socialAuth,
-          storagePrefix: data.storagePrefix && data.storagePrefix,
-        },
-        { client: trx }
-      )
-      return Promise.resolve('Profile saved')
-    } catch (error) {
-      // roll back on error
-      await trx.rollback()
+    await this.updateOrCreate(
+      queryString,
+      {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        userId: data.userId,
+        avatarUrl: data.avatarUrl && data.avatarUrl,
+        socialAuth: data.socialAuth && data.socialAuth,
+        storagePrefix: data.storagePrefix && data.storagePrefix,
+      },
+      { client: trx }
+    )
 
-      console.error(error)
-      return Promise.reject(error.message)
-    }
+    return 'Profile saved'
   }
 
   public static getProfileById = async (id: number) => {

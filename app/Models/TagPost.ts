@@ -47,40 +47,27 @@ export default class TagPost extends BaseModel {
   ) {
     for (const tagId of tagIds) {
       // checking whether the tag exist or not
-      try {
-        const exists = await this.query({ client: trx })
-          .where('post_id', postId)
-          .andWhere('tag_id', tagId)
-          .first()
-        if (exists) {
-          continue
-        }
-      } catch (error) {
-        // on failure roll back
-        await trx.rollback()
-
-        console.log(error)
-        return Promise.reject(error.message)
+      const exists = await this.query({ client: trx })
+        .where('post_id', postId)
+        .andWhere('tag_id', tagId)
+        .first()
+      if (exists) {
+        continue
       }
 
-      try {
-        await this.create(
-          {
-            post_id: postId,
-            tag_id: tagId,
-          },
-          { client: trx }
-        )
-      } catch (error) {
-        // on failure roll back
-        await trx.rollback()
-
-        console.error(error)
-        return Promise.reject(error.message)
-      }
+      /**
+       * if post tag does not exist then creating one
+       */
+      await this.create(
+        {
+          post_id: postId,
+          tag_id: tagId,
+        },
+        { client: trx }
+      )
     }
 
-    return Promise.resolve('Post tags created')
+    return 'Post tags created'
   }
 
   /**
@@ -90,15 +77,10 @@ export default class TagPost extends BaseModel {
    * @returns Promise
    */
   public static findRelativePosts = async (tagIds: number[], postId: number) => {
-    try {
-      const tagPosts = await this.query()
-        .whereIn('tag_id', tagIds)
-        .andWhereNot('post_id', postId)
-        .preload('post')
-      return Promise.resolve(tagPosts)
-    } catch (error) {
-      console.error(error)
-      return Promise.reject(error.message)
-    }
+    const tagPosts = await this.query()
+      .whereIn('tag_id', tagIds)
+      .andWhereNot('post_id', postId)
+      .preload('post')
+    return tagPosts
   }
 }

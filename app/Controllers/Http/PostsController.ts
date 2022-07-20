@@ -20,7 +20,7 @@ export default class PostsController {
       return html
     } catch (error) {
       console.error(error)
-      session.flash({ error })
+      session.flash({ error: error.message })
       return response.redirect().back()
     }
   }
@@ -46,11 +46,11 @@ export default class PostsController {
     // to save it as a posix path
     const storagePrefix = path.posix.join(auth.user!.id.toString(), imageName)
 
-    // transaction
+    // creating transaction
     const trx = await Database.transaction()
 
-    // creating a post
     try {
+      // creating a post
       await Post.storePost(
         {
           id: auth.user!.id,
@@ -61,23 +61,22 @@ export default class PostsController {
         },
         trx
       )
-    } catch (error) {
-      session.flash({ error })
-      return response.redirect().back()
-    }
 
-    // moving file to the uploads folder/aws s3 on successful record creation
-    try {
+      // moving file to the uploads folder/aws s3 on successful record creation
       await payload.postImage.moveToDisk(
         auth.user!.id.toString(),
         { name: imageName },
         Env.get('DRIVE_DISK')
       )
+
+      /**
+       * committing the transaction
+       */
+      await trx.commit()
     } catch (error) {
-      // if it fails to upload image then roll backing transaction
+      // rollback whole transaction
       await trx.rollback()
 
-      console.error(error)
       session.flash({ error: error.message })
       return response.redirect().back()
     }
@@ -116,7 +115,7 @@ export default class PostsController {
       return html
     } catch (error) {
       console.error(error)
-      session.flash({ error })
+      session.flash({ error: error.message })
       return response.redirect().toRoute('post.index')
     }
   }
@@ -143,7 +142,7 @@ export default class PostsController {
       return html
     } catch (error) {
       console.error(error)
-      session.flash({ error })
+      session.flash({ error: error.message })
       return response.redirect().toRoute('home')
     }
   }
@@ -162,7 +161,7 @@ export default class PostsController {
     try {
       post = await Post.findOrFail(parseInt(id))
     } catch (error) {
-      session.flash({ error })
+      session.flash({ error: error.message })
       return response.redirect().back()
     }
 

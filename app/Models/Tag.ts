@@ -74,12 +74,7 @@ export default class Tag extends BaseModel {
   }
 
   public static getAllByTagTitle = async (tags: string[]) => {
-    try {
-      const fetchedTags = await this.query().whereIn('title', tags)
-      return Promise.resolve(fetchedTags)
-    } catch (error) {
-      console.error(error)
-      return Promise.reject(error.message)
-    }
+    const fetchedTags = await this.query().whereIn('title', tags)
+    return fetchedTags
   }
 }

@@ -21,7 +21,7 @@ export default class HomeController {
       return html
     } catch (error) {
       console.error(error)
-      session.flash({ error })
+      session.flash({ error: error.message })
       return response.redirect().back()
     }
   }

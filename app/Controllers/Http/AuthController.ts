@@ -32,7 +32,7 @@ export default class AuthController {
         // fetching user
         let user: User
         try {
-          user = await User.findByOrFail('email', payload.email.toLocaleLowerCase())
+          user = await User.findByOrFail('email', payload.email)
         } catch (error) {
           console.error(error)
           session.flash({ error: 'User not found' })
@@ -103,12 +103,11 @@ export default class AuthController {
             session.flash({ success: 'Account created, and you are logged in' })
             return response.redirect().toRoute('home')
           } catch (error) {
-            console.error(error)
             session.flash({ error: error.message })
             return response.redirect().back()
           }
         } catch (error) {
-          session.flash({ error })
+          session.flash({ error: error.message })
           return response.redirect().back()
         }
 
@@ -127,7 +126,7 @@ export default class AuthController {
       session.flash({ success: 'Logged out' })
       return response.redirect().toRoute('home')
     } catch (error) {
-      session.flash({ error })
+      session.flash({ error: error.message })
       return response.redirect().back()
     }
   }
@@ -176,31 +175,19 @@ export default class AuthController {
       const authUser = await google.user()
 
       // creating or validating user
-      let user: User
-      try {
-        user = await User.createSocialAuthUser(authUser.email!, {
-          firstName: authUser.original.given_name,
-          lastName: authUser.original.family_name,
-          avatarUrl: authUser.avatarUrl ? authUser.avatarUrl : undefined,
-          socialAuth: GOOGLE,
-        })
-      } catch (error) {
-        console.error(error)
-        session.flash({ error })
-        return response.redirect().toRoute('auth.login')
-      }
+      const user = await User.createSocialAuthUser(authUser.email!, {
+        firstName: authUser.original.given_name,
+        lastName: authUser.original.family_name,
+        avatarUrl: authUser.avatarUrl ? authUser.avatarUrl : undefined,
+        socialAuth: GOOGLE,
+      })
 
       /**
        * Login user using the web guard
        */
-      try {
-        await auth.use('web').login(user)
-        session.flash({ success: 'Logged In' })
-        return response.redirect().toRoute('post.index')
-      } catch (error) {
-        session.flash({ error: error.message })
-        return response.redirect().toRoute('auth.login')
-      }
+      await auth.use('web').login(user)
+      session.flash({ success: 'Logged In' })
+      return response.redirect().toRoute('post.index')
     } catch (error) {
       session.flash({ error: error.message })
       return response.redirect().toRoute('auth.login')
@@ -256,18 +243,12 @@ export default class AuthController {
       const authUser = await github.user()
 
       // creating or validating user
-      let user: User
-      try {
-        user = await User.createSocialAuthUser(authUser.email!, {
-          firstName: authUser.name.split(' ')[0],
-          lastName: authUser.name.split(' ')[1],
-          avatarUrl: authUser.avatarUrl ? authUser.avatarUrl : undefined,
-          socialAuth: GITHUB,
-        })
-      } catch (error) {
-        session.flash({ error })
-        return response.redirect().toRoute('auth.login')
-      }
+      const user = await User.createSocialAuthUser(authUser.email!, {
+        firstName: authUser.name.split(' ')[0],
+        lastName: authUser.name.split(' ')[1],
+        avatarUrl: authUser.avatarUrl ? authUser.avatarUrl : undefined,
+        socialAuth: GITHUB,
+      })
 
       /**
        * Login user using the web guard
@@ -326,24 +307,17 @@ export default class AuthController {
       const authUser = await faceBook.user()
 
       // creating or validating user
-      let user: User
-      try {
-        user = await User.createSocialAuthUser(authUser.email!, {
-          firstName: authUser.name.split(' ')[0],
-          lastName: authUser.name.split(' ')[1],
-          avatarUrl: authUser.avatarUrl ? authUser.avatarUrl : undefined,
-          socialAuth: FACEBOOK,
-        })
-      } catch (error) {
-        session.flash({ error })
-        return response.redirect().toRoute('auth.login')
-      }
+      const user = await User.createSocialAuthUser(authUser.email!, {
+        firstName: authUser.name.split(' ')[0],
+        lastName: authUser.name.split(' ')[1],
+        avatarUrl: authUser.avatarUrl ? authUser.avatarUrl : undefined,
+        socialAuth: FACEBOOK,
+      })
 
       /**
        * Login user using the web guard
        */
       await auth.use('web').login(user)
-
       session.flash({ success: 'Logged In' })
       return response.redirect().toRoute('post.index')
     } catch (error) {

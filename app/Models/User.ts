@@ -65,10 +65,10 @@ export default class User extends BaseModel {
   public static getAll = async (id: number) => {
     try {
       const results = await this.query().where('id', id).preload('posts').first()
-      return Promise.resolve(results)
+      return results
     } catch (error) {
       console.error(error)
-      return Promise.reject(error.message)
+      throw new Error(error.message)
     }
   }
 
@@ -82,33 +82,26 @@ export default class User extends BaseModel {
     const trx = await Database.transaction()
 
     // checking if user exists or not
-    try {
-      const exists = await this.findBy('email', user.email)
-      if (exists) {
-        return Promise.reject('User already exists')
-      }
-    } catch (error) {
-      console.error(error)
-      return Promise.reject(error.message)
+    const exists = await this.findBy('email', user.email)
+    if (exists) {
+      throw new Error('User already exists')
     }
 
     // creating user
-    let createdUser = new User()
+    let createdUser: User
     try {
-      createdUser.email = user.email
-      createdUser.password = await Hash.make(user.password.trim())
-
-      // using transaction
-      createdUser.useTransaction(trx)
-
-      // saving record
-      createdUser = await createdUser.save()
+      createdUser = await this.create(
+        {
+          email: user.email,
+          password: await Hash.make(user.password.trim()),
+        },
+        { client: trx }
+      )
     } catch (error) {
+      console.error(error)
       // rollback whole transaction
       await trx.rollback()
-
-      console.error(error)
-      return Promise.reject(error.message)
+      throw error
     }
 
     // creating profile
@@ -122,17 +115,16 @@ export default class User extends BaseModel {
         trx
       )
     } catch (error) {
+      console.error(error)
       // rollback whole transaction
       await trx.rollback()
-
-      console.error(error)
-      return Promise.reject(error)
+      throw error
     }
 
     // committing transaction
     await trx.commit()
 
-    return Promise.resolve(createdUser)
+    return createdUser
   }
 
   /**
@@ -149,13 +141,7 @@ export default class User extends BaseModel {
      * 1. fetching whether user exists or not
      * 2. checking if user exists with different auth or not
      */
-    let user: User | null
-    try {
-      user = await this.query().where('email', email).preload('profile').first()
-    } catch (error) {
-      console.error(error)
-      return Promise.reject(error.message)
-    }
+    let user = await this.query().where('email', email).preload('profile').first()
 
     if (user) {
       /**
@@ -165,22 +151,17 @@ export default class User extends BaseModel {
       if (user.profile.socialAuth !== profile.socialAuth) {
         const error = 'User already exists with this email'
         console.error(error)
-        return Promise.reject(error)
+        throw new Error(error)
       }
     } else {
-      // if does not exists then creating new one
+      /**
+       * if does not exists then creating new one
+       */
       try {
-        user = (await this.create({ email })).useTransaction(trx)
-      } catch (error) {
-        // roll back
-        await trx.rollback()
+        // creating user
+        user = await this.create({ email }, { client: trx })
 
-        console.error(error)
-        return Promise.reject(error.message)
-      }
-
-      // creating profile
-      try {
+        // creating profile
         await Profile.updateOrCreateProfile(
           {
             firstName: profile.firstName,
@@ -191,19 +172,18 @@ export default class User extends BaseModel {
           },
           trx
         )
+
+        // committing transaction
+        await trx.commit()
       } catch (error) {
+        console.error(error)
         // roll back
         await trx.rollback()
-
-        console.error(error)
-        return Promise.reject(error.message)
+        throw error
       }
     }
 
-    // committing transaction
-    await trx.commit()
-
-    return Promise.resolve(user)
+    return user
   }
 
   /**
