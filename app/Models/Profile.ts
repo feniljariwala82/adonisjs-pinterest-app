@@ -106,18 +106,12 @@ export default class Profile extends BaseModel {
   }
 
   public static getProfileById = async (id: number) => {
-    try {
-      const profile = await this.query()
-        .where('id', id)
-        .preload('user', (userQuery) => {
-          userQuery.preload('posts')
-        })
-        .firstOrFail()
-
-      return Promise.resolve(profile)
-    } catch (error) {
-      console.error(error)
-      return Promise.reject(error.message)
-    }
+    const profile = await this.query()
+      .where('id', id)
+      .preload('user', (userQuery) => {
+        userQuery.preload('posts')
+      })
+      .firstOrFail()
+    return profile
   }
 }

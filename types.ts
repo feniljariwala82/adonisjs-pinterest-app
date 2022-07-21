@@ -17,8 +17,8 @@ interface StorePostType {
 
 interface UpdatePostType {
   id: number
-  title: string
-  description: string
+  title?: string
+  description?: string
   tags: string[]
   storagePrefix?: string
 }

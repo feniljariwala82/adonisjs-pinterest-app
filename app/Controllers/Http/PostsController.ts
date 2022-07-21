@@ -90,16 +90,15 @@ export default class PostsController {
    */
   public async show({ params, view, session, response }: HttpContextContract) {
     const { id } = params
-    const postId = parseInt(id)
 
     try {
       // fetching particular post
-      const post = await Post.getPostById(postId)
+      const post = await Post.getPostById(id)
 
       // finding relative posts
       const tagPosts = await TagPost.findRelativePosts(
         post.tags.map((tag) => tag.id),
-        postId
+        parseInt(id)
       )
 
       // finding unique post ids
@@ -128,15 +127,10 @@ export default class PostsController {
 
     // fetching particular post
     try {
-      const post = await Post.getPostById(parseInt(id))
+      const post = await Post.getPostById(id)
 
       // checking authorization
-      try {
-        await bouncer.with('PostPolicy').authorize('edit', post)
-      } catch (error) {
-        session.flash({ error: 'Unauthorized' })
-        return response.redirect().toRoute('home')
-      }
+      await bouncer.with('PostPolicy').authorize('edit', post)
 
       const html = await view.render('post/edit', { post })
       return html
@@ -159,26 +153,30 @@ export default class PostsController {
     // checking post available or not
     let post: Post
     try {
-      post = await Post.findOrFail(parseInt(id))
-    } catch (error) {
-      session.flash({ error: error.message })
-      return response.redirect().back()
-    }
+      post = await Post.getPostById(id)
 
-    // checking authorization
-    try {
+      // checking authorization
       await bouncer.with('PostPolicy').authorize('update', post)
     } catch (error) {
-      console.error(error)
-      session.flash({ error: 'Unauthorized' })
+      session.flash({ error: error.message })
       return response.redirect().toRoute('post.index')
     }
 
     /**
-     * Removing old image if new image provided
+     * user directory path
+     */
+    let userDirPath = auth.user!.id.toString()
+    /**
+     * new image name
      */
     let imgName: string | undefined
+    /**
+     * user directory name + image name
+     */
     let storagePrefix: string = ''
+    /**
+     * to be deleted image path after successful image update operation
+     */
     let toBeDeletedImage: string = ''
 
     if (payload.postImage) {
@@ -189,7 +187,7 @@ export default class PostsController {
       imgName = `${cuid()}.${payload.postImage.extname}`
 
       // new storage prefix
-      storagePrefix = path.posix.join(auth.user!.id.toString(), imgName)
+      storagePrefix = path.posix.join(userDirPath, imgName)
     }
 
     // transaction
@@ -215,20 +213,7 @@ export default class PostsController {
         /**
          * adding new image file to the uploads folder
          */
-        try {
-          await payload.postImage.moveToDisk(
-            auth.user!.id.toString(),
-            { name: imgName },
-            Env.get('DRIVE_DISK')
-          )
-        } catch (error) {
-          // roll back
-          await trx.rollback()
-
-          console.error(error)
-          session.flash({ error: error.message })
-          return response.redirect().back()
-        }
+        await payload.postImage.moveToDisk(userDirPath, { name: imgName }, Env.get('DRIVE_DISK'))
 
         /**
          * removing old file
@@ -236,18 +221,29 @@ export default class PostsController {
         try {
           await Drive.delete(toBeDeletedImage)
         } catch (error) {
-          console.error(error)
-          session.flash({ error: error.message })
-          return response.redirect().back()
+          /**
+           * if deletion fails for old image, then at that moment new image is uploaded,
+           * so deleting new uploaded image and rollback the transaction
+           */
+          await Drive.delete(storagePrefix)
+
+          // roll back
+          await trx.rollback()
         }
       }
+
+      // committing transaction
+      await trx.commit()
 
       session.flash({ success: result })
       return response.redirect().toRoute('post.show', { id })
     } catch (error) {
+      // roll back
+      await trx.rollback()
+
       console.error(error)
-      session.flash({ error })
-      return response.redirect().back()
+      session.flash({ error: error.message })
+      return response.redirect().toRoute('home')
     }
   }
 
@@ -261,32 +257,23 @@ export default class PostsController {
     const trx = await Database.transaction()
 
     try {
-      const post = await Post.findOrFail(parseInt(id), { client: trx })
+      const post = await Post.findOrFail(id, { client: trx })
 
       // checking authorization
-      try {
-        await bouncer.with('PostPolicy').authorize('delete', post)
-      } catch (error) {
-        session.flash({ error: 'Unauthorized' })
-        return response.redirect().toRoute('post.index')
-      }
+      await bouncer.with('PostPolicy').authorize('delete', post)
 
       // deleting
       try {
         await post.delete()
-      } catch (error) {
-        console.error(error)
-        session.flash({ error: error.message })
-        return response.redirect().toRoute('post.index')
-      }
 
-      /**
-       * Removing image
-       */
-      try {
+        /**
+         * Removing image
+         */
         await Drive.delete(post.storage_prefix)
 
-        // committing the transaction
+        /**
+         * committing the transaction
+         */
         await trx.commit()
       } catch (error) {
         // rollback delete transaction
@@ -304,8 +291,8 @@ export default class PostsController {
       await trx.rollback()
 
       console.error(error)
-      session.flash({ error: 'Post not found' })
-      return response.redirect().toRoute('post.index')
+      session.flash({ error: error.message })
+      return response.redirect().back()
     }
   }
 
@@ -317,8 +304,17 @@ export default class PostsController {
       const location = post.storage_prefix
       const { size } = await Drive.getStats(location)
 
+      /**
+       * setting media type
+       */
       response.type(path.extname(location))
+      /**
+       * setting content size for browser
+       */
       response.header('Content-length', size.toString())
+      /**
+       * setting content disposition for downloading the image
+       */
       response.header('Content-Disposition', `attachment; filename=${path.basename(location)}`)
 
       return response.stream(await Drive.getStream(location))

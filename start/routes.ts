@@ -35,9 +35,9 @@ Route.get('/', 'HomeController.index').as('home')
 
 // posts routes
 Route.resource('/post', 'PostsController').middleware({
+  index: 'auth',
   create: 'auth',
   store: 'auth',
-  index: 'auth',
   edit: 'auth',
   update: 'auth',
   destroy: 'auth',

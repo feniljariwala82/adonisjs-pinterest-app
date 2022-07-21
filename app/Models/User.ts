@@ -90,7 +90,6 @@ export default class User extends BaseModel {
     // creating user
     let createdUser: User
     try {
-<<<<<<< HEAD
       createdUser = await this.create(
         {
           email: user.email,
@@ -98,16 +97,6 @@ export default class User extends BaseModel {
         },
         { client: trx }
       )
-=======
-      createdUser.email = user.email
-      createdUser.password = user.password
-
-      // using transaction
-      createdUser.useTransaction(trx)
-
-      // saving record
-      createdUser = await createdUser.save()
->>>>>>> a6f5860ec3ab876c8d0a2c9706053896a4d96a6b
     } catch (error) {
       console.error(error)
       // rollback whole transaction
@@ -203,7 +192,7 @@ export default class User extends BaseModel {
    * @param updateData
    * @returns Promise
    */
-  public static update = async (
+  public static updateProfile = async (
     data: { id: number; storagePrefix?: string },
     updateData: UpdateUser,
     trx: TransactionClientContract
@@ -212,12 +201,9 @@ export default class User extends BaseModel {
     const { firstName, lastName, password } = updateData
 
     // checking whether the user exists or not
-    let user: User
-    try {
-      user = await User.query().where('id', id).preload('profile').firstOrFail()
-    } catch (error) {
-      console.error(error)
-      return Promise.reject('User not found')
+    const user = await User.query({ client: trx }).where('id', id).preload('profile').first()
+    if (!user) {
+      throw new Error('User not found')
     }
 
     // for password
@@ -226,81 +212,31 @@ export default class User extends BaseModel {
     }
 
     // saving user data
-    try {
-      await user.useTransaction(trx).save()
-    } catch (error) {
-      // if user saving fails
-      await trx.rollback()
-
-      console.error(error)
-      return Promise.reject(error.message)
-    }
+    await user.save()
 
     // updating profile
-    try {
-      const profile = await Profile.getProfileById(user.profile.id)
+    const profile = await Profile.getProfileById(user.profile.id)
 
-      if (firstName) {
-        profile.firstName = firstName
-      }
-      if (lastName) {
-        profile.lastName = lastName
-      }
-      if (storagePrefix) {
-        profile.storagePrefix = storagePrefix
-      }
-
-      try {
-        await profile.useTransaction(trx).save()
-      } catch (error) {
-        // if profile saving fails
-        await trx.rollback()
-
-        console.error(error)
-        return Promise.reject(error.message)
-      }
-    } catch (error) {
-      // if finding profile fails
-      await trx.rollback()
-
-      console.error(error)
-      return Promise.reject(error)
+    if (firstName) {
+      profile.firstName = firstName
     }
+    if (lastName) {
+      profile.lastName = lastName
+    }
+    if (storagePrefix) {
+      profile.storagePrefix = storagePrefix
+    }
+
+    // saving updated profile
+    await profile.useTransaction(trx).save()
 
     /**
      * Removing an old image if a new image provided
      */
     if (user.profile.storagePrefix && storagePrefix) {
-      try {
-        await Drive.delete(user.profile.storagePrefix)
-      } catch (error) {
-        // if profile get fails
-        await trx.rollback()
-
-        console.error(error)
-        return Promise.reject(error.message)
-      }
+      await Drive.delete(user.profile.storagePrefix)
     }
 
-    // at the end committing the transaction
-    await trx.commit()
-
-    return Promise.resolve('Profile updated')
-  }
-
-  public static getUserById = async (id: number) => {
-    try {
-      const user = await this.query()
-        .where('id', id)
-        .preload('profile')
-        .preload('posts', (postQuery) => {
-          postQuery.orderBy('created_at', 'desc')
-        })
-        .firstOrFail()
-      return Promise.resolve(user)
-    } catch (error) {
-      console.error(error)
-      return Promise.reject(error.message)
-    }
+    return 'Profile updated'
   }
 }

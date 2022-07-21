@@ -5,8 +5,8 @@ export default class UpdatePostValidator {
   constructor(protected ctx: HttpContextContract) {}
 
   public schema = schema.create({
-    title: schema.string({ trim: true }, [rules.required(), rules.maxLength(50)]),
-    description: schema.string({ trim: true }, [rules.required(), rules.maxLength(400)]),
+    title: schema.string.optional({ trim: true }, [rules.required(), rules.maxLength(50)]),
+    description: schema.string.optional({ trim: true }, [rules.required(), rules.maxLength(400)]),
     postImage: schema.file.optional({
       size: '2mb',
       extnames: ['jpg', 'png'],
